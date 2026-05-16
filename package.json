@@ -1,0 +1,20 @@
+{
+  "name": "dol-thalia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
+  "type": "module",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "fs-extra": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "oxfmt": "^0.35.0",
+    "oxlint": "^1.50.0",
+    "oxlint-tsgolint": "^0.14.2",
+    "terser": "^5.47.1",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "bun@1.3.14"
+}

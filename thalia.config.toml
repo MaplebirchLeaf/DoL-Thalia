@@ -1,0 +1,26 @@
+[project]
+name = "DoL-Thalia"
+
+[game]
+version = "0.5.9.7"
+
+[upstreams.sugarcube_vrelnir]
+url = "https://gitgud.io/Vrelnir/sugarcube-2"
+ref = "master"
+path = "vendor/sugarcube-2-vrelnir"
+
+[upstreams.modloader]
+url = "https://github.com/MaplebirchLeaf/sugarcube-2-ModLoader"
+ref = "thalia"
+path = "vendor/sugarcube-2-ModLoader"
+
+[paths]
+source_html = "input/*.html"
+builtin_mods = "input/mods"
+output_html = "dist/html/index.html"
+story_format = "dist/story-format/sugarcube-2/format.js"
+cordova_project = ".cache/apk/dol-thalia-android"
+
+[apk]
+id = "com.maplebirch.dol.thalia"
+name = "DoL Thalia"
