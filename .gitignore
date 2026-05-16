@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.cache/
+temp/
+publish/
+.DS_Store
+*.log
+
+/vendor/*
+!/vendor/sugarcube-2-ModLoader/
