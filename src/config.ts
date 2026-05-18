@@ -38,16 +38,10 @@ export interface ThaliaConfig {
 
 export async function loadConfig(configPath = 'thalia.config.toml'): Promise<ThaliaConfig> {
   const fullPath = resolve(configPath);
-
-  if (!existsSync(fullPath)) {
-    throw new Error(`Config file not found: ${fullPath}`);
-  }
-
+  if (!existsSync(fullPath)) throw new Error(`Config file not found: ${fullPath}`);
   const content = await Bun.file(fullPath).text();
   const config = TOML.parse(content) as unknown as ThaliaConfig;
-
   validateConfig(config);
-
   return config;
 }
 
@@ -79,7 +73,5 @@ function validateConfig(config: ThaliaConfig): void {
 }
 
 function required(value: unknown, name: string): void {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new Error(`Missing required config field: ${name}`);
-  }
+  if (typeof value !== 'string' || value.trim() === '') throw new Error(`Missing required config field: ${name}`);
 }

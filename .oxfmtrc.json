@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["node_modules/", "dist/", "publish/", "temp/", "input/", "vendor/sugarcube-2-ModLoader/", ".cache/"],
   "printWidth": 200,
   "tabWidth": 2,
   "useTabs": false,

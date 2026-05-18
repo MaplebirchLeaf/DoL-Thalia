@@ -4,6 +4,12 @@
   "private": true,
   "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
   "type": "module",
+  "scripts": {
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "fs-extra": "^11.3.0"
