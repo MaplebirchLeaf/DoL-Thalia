@@ -2,3 +2,9 @@
 	path = vendor/sugarcube-2-ModLoader
 	url = https://github.com/MaplebirchLeaf/sugarcube-2-ModLoader
 	branch = thalia
+[submodule "mods-src/ModLoaderGui"]
+	path = mods-src/ModLoaderGui
+	url = https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoaderGui
+[submodule "mods-src/ConflictChecker"]
+	path = mods-src/ConflictChecker
+	url = https://github.com/Lyoko-Jeremie/ConflictCheckerAddon
