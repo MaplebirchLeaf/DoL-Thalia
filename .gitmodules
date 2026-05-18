@@ -8,3 +8,6 @@
 [submodule "mods-src/ConflictChecker"]
 	path = mods-src/ConflictChecker
 	url = https://github.com/Lyoko-Jeremie/ConflictCheckerAddon
+[submodule "mods-src/ModSubUiAngularJs"]
+	path = mods-src/ModSubUiAngularJs
+	url = https://github.com/Lyoko-Jeremie/ModSubUiAngularJs
