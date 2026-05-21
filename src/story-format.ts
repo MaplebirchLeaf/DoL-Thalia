@@ -139,7 +139,7 @@ function patchExistingStartupHook(source: string): string {
 }
 
 function patchExistingI10nHook(source: string): string {
-  const hookNameIndex = source.indexOf('const initI10n = () => {');
+  const hookNameIndex = source.search(/\b(?:const|var)\s+initI10n\s*=\s*\(\)\s*=>\s*\{/);
   if (hookNameIndex === -1) return source;
   const bodyStart = source.indexOf('{', hookNameIndex);
   const bodyEnd = findMatchingBrace(source, bodyStart);
@@ -147,7 +147,7 @@ function patchExistingI10nHook(source: string): string {
 }
 
 function I10nHookSource(prefix: string): string {
-  return `${prefix}const shouldApplyChineseI10n = () => {\n${prefix}\tconst languages = Array.isArray(navigator.languages) && navigator.languages.length > 0 ? navigator.languages : [navigator.language];\n${prefix}\treturn languages.some(language => /^zh(?:-|$)/i.test(language || ''));\n${prefix}};\n${prefix}const initI10n = () => {\n${prefix}\t/* ${I10N_HOOK_MARKER} */\n${prefix}\tif (typeof window.initI10n === 'function') window.initI10n(l10nStrings);\n${prefix}\tif (shouldApplyChineseI10n()) Object.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});\n${prefix}};\n`;
+  return `${prefix}var shouldApplyChineseI10n = () => {\n${prefix}\tconst languages = Array.isArray(navigator.languages) && navigator.languages.length > 0 ? navigator.languages : [navigator.language];\n${prefix}\treturn languages.some(language => /^zh(?:-|$)/i.test(language || ''));\n${prefix}};\n${prefix}var initI10n = () => {\n${prefix}\t/* ${I10N_HOOK_MARKER} */\n${prefix}\tif (typeof window.initI10n === 'function') window.initI10n(l10nStrings);\n${prefix}\tif (shouldApplyChineseI10n()) Object.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});\n${prefix}};\n`;
 }
 
 function patchJQueryStartup(source: string): string {

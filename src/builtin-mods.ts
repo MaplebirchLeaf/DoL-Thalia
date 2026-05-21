@@ -48,11 +48,12 @@ async function syncKnownNestedSubmodules(targets: BuiltinModTarget[]): Promise<v
 async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModTarget[]> {
   const modListPath = join(modLoaderRoot, 'modList.json');
   if (!existsSync(modListPath)) throw new Error(`modList.json not found: ${modListPath}`);
-  const modListText = await Bun.file(modListPath).text();
-  const targets = modListText
-    .split(/\r?\n/)
-    .map(line => line.trim().match(/^["']([^"']+\.mod\.zip)["']/)?.[1])
-    .filter((target): target is string => !!target)
+  const modList = await Bun.file(modListPath).json();
+  if (!Array.isArray(modList) || !modList.every(target => typeof target === 'string')) {
+    throw new Error(`Invalid modList.json: ${modListPath}`);
+  }
+  const targets = modList
+    .filter(target => target.toLowerCase().endsWith('.mod.zip'))
     .map(target => {
       const output = join(modLoaderRoot, target);
       const dir = dirname(output);

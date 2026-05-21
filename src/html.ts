@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { cp, copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
+import { minify } from 'terser';
 import type { ThaliaConfig } from './config';
 import { readModLoaderLocalModTargets } from './modloader';
 import { run } from './process';
@@ -10,12 +11,12 @@ import { run } from './process';
 const HTML_CACHE_DIR = '.cache/html';
 
 interface EmbeddedIndexDBMod {
+  dataParts: string[];
   hash: string;
   name: string;
-  dataParts: string[];
 }
 
-const EMBEDDED_MOD_BASE64_PART_SIZE = 512 * 1024;
+const EMBEDDED_MOD_BASE64_PART_SIZE = 1024 * 1024;
 const RUNTIME_SIDECAR_FILES = ['style.css', 'DolSettingsExport.json'];
 
 export async function buildHtml(config: ThaliaConfig): Promise<void> {
@@ -56,6 +57,7 @@ export async function buildHtml(config: ThaliaConfig): Promise<void> {
     const generatedModHtml = `${replacedHtml}.mod.html`;
     requireFile(generatedModHtml);
     await insertIndexDBMods(generatedModHtml, indexDBModFiles);
+    await minifySugarCubeScript(generatedModHtml);
     await copyFile(generatedModHtml, outputHtml);
     await copyRuntimeAssets({
       sourceHtml,
@@ -75,6 +77,8 @@ async function copyRuntimeAssets(options: { sourceHtml: string; imagesDir: strin
     const source = join(sourceDir, file);
     if (existsSync(source)) await copyFile(source, join(options.outputDir, file));
   }
+  const remoteModList = join(options.outputDir, 'modList.json');
+  if (!existsSync(remoteModList)) await writeFile(remoteModList, '[]\n', 'utf8');
 }
 
 async function findSingleSourceHtml(pattern: string): Promise<string> {
@@ -108,9 +112,9 @@ async function insertIndexDBMods(htmlPath: string, modFiles: string[]): Promise<
   for (const modFile of modFiles) {
     const data = await readFile(modFile);
     items.push({
+      dataParts: splitBase64(data.toString('base64')),
       hash: createHash('sha256').update(data).digest('hex'),
-      name: modNameFromZip(data, modFile),
-      dataParts: splitBase64(data.toString('base64'))
+      name: modNameFromZip(data, modFile)
     });
   }
   const script = `<script type="text/javascript">window.modDataValueZipListIndexDB = ${JSON.stringify(items)};</script>`;
@@ -129,10 +133,21 @@ async function insertIndexDBMods(htmlPath: string, modFiles: string[]): Promise<
   await writeFile(htmlPath, `${html.slice(0, firstScriptIndex)}\n${script}\n${html.slice(firstScriptIndex)}`, 'utf8');
 }
 
-function splitBase64(data: string): string[] {
-  const parts: string[] = [];
-  for (let i = 0; i < data.length; i += EMBEDDED_MOD_BASE64_PART_SIZE) parts.push(data.slice(i, i + EMBEDDED_MOD_BASE64_PART_SIZE));
-  return parts;
+async function minifySugarCubeScript(htmlPath: string): Promise<void> {
+  const html = await readFile(htmlPath, 'utf8');
+  const openStart = html.indexOf('<script id="script-sugarcube"');
+  if (openStart === -1) return;
+  const openEnd = html.indexOf('>', openStart);
+  const closeStart = html.indexOf('</script>', openEnd);
+  if (openEnd === -1 || closeStart === -1) throw new Error(`Invalid script-sugarcube block in HTML: ${htmlPath}`);
+  const source = html.slice(openEnd + 1, closeStart);
+  const result = await minify(source, {
+    compress: { passes: 2 },
+    mangle: true,
+    format: { comments: false }
+  });
+  if (!result.code) throw new Error('SugarCube script minify failed.');
+  await writeFile(htmlPath, `${html.slice(0, openEnd + 1)}${result.code}${html.slice(closeStart)}`, 'utf8');
 }
 
 function modNameFromZip(data: Uint8Array, modFile: string): string {
@@ -142,6 +157,12 @@ function modNameFromZip(data: Uint8Array, modFile: string): string {
   const boot = JSON.parse(strFromU8(bootJson)) as { name?: unknown };
   if (typeof boot.name !== 'string' || boot.name.trim() === '') throw new Error(`Invalid boot.json name in embedded IndexDB mod: ${modFile}`);
   return boot.name;
+}
+
+function splitBase64(data: string): string[] {
+  const parts: string[] = [];
+  for (let i = 0; i < data.length; i += EMBEDDED_MOD_BASE64_PART_SIZE) parts.push(data.slice(i, i + EMBEDDED_MOD_BASE64_PART_SIZE));
+  return parts;
 }
 
 function requireFile(path: string): void {

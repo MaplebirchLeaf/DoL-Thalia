@@ -44,19 +44,20 @@ export async function buildModLoaderLocalMods(config: ThaliaConfig): Promise<voi
 
 export async function readModLoaderLocalModTargets(root: string): Promise<string[]> {
   const modListPath = join(root, 'modList.json');
-  const text = await readFile(modListPath, 'utf8');
-  const targets = parseModLoaderModList(text)
+  const targets = JSON.parse(await readFile(modListPath, 'utf8'));
+  if (!Array.isArray(targets) || !targets.every(target => typeof target === 'string')) {
+    throw new Error(`Invalid modList.json: ${modListPath}`);
+  }
+  return [...new Set(targets)]
     .filter(target => {
       if (/^[a-z]+:\/\//i.test(target)) {
-        logWarn(`跳过远程内置模组：${target}`);
+        logWarn(`Skip remote builtin mod: ${target}`);
         return false;
       }
       return true;
     })
     .filter(target => target.toLowerCase().endsWith('.mod.zip'));
-  return [...new Set(targets)];
 }
-
 async function installDependencies(root: string): Promise<void> {
   if (existsSync(join(root, '.pnp.cjs')) || existsSync(join(root, 'node_modules'))) return;
   await runShell('corepack yarn install', { cwd: root, quiet: true });
@@ -84,16 +85,6 @@ async function tryRun(
   } catch {
     return false;
   }
-}
-
-function parseModLoaderModList(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .filter(line => !line.startsWith('//'))
-    .map(line => line.match(/^["']([^"']+\.mod\.zip)["']\s*,?\s*(?:\/\/.*)?$/i)?.[1])
-    .filter((target): target is string => !!target);
 }
 
 function requireFile(path: string): void {

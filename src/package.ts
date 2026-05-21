@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { platform } from 'node:process';
@@ -10,8 +10,11 @@ import { buildPackageName, escapeXml, safeFileName } from './release-utils';
 
 const GRADLE_VERSION = '8.14.2';
 const ANDROID_PLATFORM_DIR = 'platforms/android';
-const DEBUG_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/debug/app-debug.apk`;
+const RELEASE_UNSIGNED_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/release/app-release-unsigned.apk`;
 const APK_ICON_SOURCE = 'input/icon.png';
+const APK_KEYSTORE = 'input/signing/DoL-Thalia.keystore';
+const APK_KEY_ALIAS = 'dol-thalia';
+const APK_KEY_PASSWORD = 'android';
 const CORDOVA_PLUGINS = ['cordova-plugin-save-dialog@2.0.1', 'cordova-plugin-rnk-toast@0.0.1'];
 
 export interface ApkBuildStatus {
@@ -28,7 +31,7 @@ export async function buildPlayerZip(config: ThaliaConfig): Promise<void> {
   const folderName = buildPackageName(config.project.name, config.game.version);
   const files = await readFilesForZip(htmlDir, folderName, `${safeFileName(config.project.name)}.html`);
   await writeFile(outputZip, zipSync(files, { level: 6 }));
-  logDone(`ZIP 输出：${outputZip}`);
+  logDone(`ZIP \u8f93\u51fa\uff1a${outputZip}`);
 }
 
 export async function buildApk(config: ThaliaConfig): Promise<void> {
@@ -41,30 +44,32 @@ export async function buildApk(config: ThaliaConfig): Promise<void> {
   if (!status.canBuild) throw new Error(status.message);
   await mkdir(outputDir, { recursive: true });
 
-  logInfo('准备 Cordova 工程');
+  logInfo('\u51c6\u5907 Cordova \u5de5\u7a0b');
   const projectCreated = await ensureCordovaProject(config, projectDir);
   await prepareCordovaWww(htmlDir, join(projectDir, 'www'));
-  await writeCordovaConfig(config, join(projectDir, 'config.xml'));
+  const configChanged = await writeCordovaConfig(config, join(projectDir, 'config.xml'));
+  const platformReset = await resetAndroidPlatformIfPackageChanged(config, androidProjectDir);
   const platformCreated = await ensureAndroidPlatform(projectDir);
   const pluginsChanged = await ensureCordovaPlugins(projectDir);
-  if (projectCreated || platformCreated || pluginsChanged || !existsSync(join(androidProjectDir, 'app/src/main/assets/www/cordova.js'))) {
-    logInfo('刷新 Cordova 平台');
+  if (projectCreated || configChanged || platformReset || platformCreated || pluginsChanged || !existsSync(join(androidProjectDir, 'app/src/main/assets/www/cordova.js'))) {
+    logInfo('\u5237\u65b0 Cordova \u5e73\u53f0');
     await run([findCordovaBin(), 'prepare', 'android'], { cwd: projectDir, quiet: true });
   }
 
-  logInfo('同步 Web 资源');
+  logInfo('\u540c\u6b65 Web \u8d44\u6e90');
   await syncAndroidWww(projectDir);
   await applyApkIcon(androidProjectDir);
+  await applyBlackLaunchTheme(androidProjectDir);
   await suppressAndroidJavaWarnings(androidProjectDir);
 
-  logInfo('打包 Android APK');
-  await run([findGradleBin(), 'cdvBuildDebug', '--quiet'], { cwd: androidProjectDir, env: androidBuildEnv() });
+  logInfo('\u6253\u5305 Android Release');
+  await run([findGradleBin(), 'cdvBuildRelease', '--quiet'], { cwd: androidProjectDir, env: androidBuildEnv(), quiet: true });
 
-  const builtApk = join(projectDir, DEBUG_APK_PATH);
-  requireFile(builtApk);
+  const unsignedApk = join(projectDir, RELEASE_UNSIGNED_APK_PATH);
+  requireFile(unsignedApk);
   const outputApk = join(outputDir, `${safeFileName(config.project.name)}.apk`);
-  await cp(builtApk, outputApk, { force: true });
-  logDone(`APK 输出：${outputApk}`);
+  await signApk(unsignedApk, outputApk);
+  logDone(`APK \u8f93\u51fa\uff1a${outputApk}`);
 }
 
 async function readFilesForZip(root: string, folderName: string, htmlFileName: string): Promise<Record<string, Uint8Array>> {
@@ -121,32 +126,35 @@ async function injectCordovaScripts(indexHtml: string): Promise<void> {
   await writeFile(indexHtml, `${scripts}${html}`, 'utf8');
 }
 
-async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Promise<void> {
-  await writeFile(
-    configXml,
-    `<?xml version='1.0' encoding='utf-8'?>
-    <widget id="${escapeXml(config.apk.id)}" version="${escapeXml(config.game.version)}" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-        <name>${escapeXml(config.apk.name)}</name>
-        <description>${escapeXml(config.project.name)} player package.</description>
-        <author email="modloader@example.invalid">${escapeXml(config.project.name)}</author>
-        <content src="index.html" />
-        <access origin="*" />
-        <allow-navigation href="*" />
-        <allow-intent href="http://*/*" />
-        <allow-intent href="https://*/*" />
-        <allow-intent href="market:*" />
-        <preference name="AndroidInsecureFileModeEnabled" value="true" />
-        <preference name="AndroidLaunchMode" value="singleTask" />
-        <preference name="GradlePluginKotlinEnabled" value="true" />
-    </widget>
-    `,
-    'utf8'
-  );
+async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Promise<boolean> {
+  const content = `<?xml version="1.0" encoding="utf-8"?>
+<widget id="${escapeXml(config.apk.id)}" version="${escapeXml(config.game.version)}" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+  <name>${escapeXml(config.apk.name)}</name>
+  <content src="index.html" />
+  <access origin="*" />
+  <allow-navigation href="*" />
+  <preference name="AndroidLaunchMode" value="singleTask" />
+  <preference name="GradlePluginKotlinEnabled" value="true" />
+</widget>
+`;
+  const previous = existsSync(configXml) ? await readFile(configXml, 'utf8') : '';
+  if (previous === content) return false;
+  await writeFile(configXml, content, 'utf8');
+  return true;
 }
 
 async function ensureAndroidPlatform(projectDir: string): Promise<boolean> {
   if (existsSync(join(projectDir, ANDROID_PLATFORM_DIR))) return false;
   await run([findCordovaBin(), 'platform', 'add', 'android'], { cwd: projectDir, quiet: true });
+  return true;
+}
+
+async function resetAndroidPlatformIfPackageChanged(config: ThaliaConfig, androidProjectDir: string): Promise<boolean> {
+  const gradleConfigPath = join(androidProjectDir, 'cdv-gradle-config.json');
+  if (!existsSync(gradleConfigPath)) return false;
+  const gradleConfig = JSON.parse(await readFile(gradleConfigPath, 'utf8')) as { PACKAGE_NAMESPACE?: string };
+  if (gradleConfig.PACKAGE_NAMESPACE === config.apk.id) return false;
+  await rm(androidProjectDir, { recursive: true, force: true });
   return true;
 }
 
@@ -172,12 +180,67 @@ async function suppressAndroidJavaWarnings(androidProjectDir: string): Promise<v
   await writeFile(
     join(androidProjectDir, 'app/build-extras.gradle'),
     `tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs += ['-Xlint:none', '-nowarn']
-    options.deprecation = false
-    options.warnings = false
-}
-`,
+      options.compilerArgs += ['-Xlint:none', '-nowarn']
+      options.deprecation = false
+      options.warnings = false
+    }
+    `,
     'utf8'
+  );
+}
+
+async function signApk(unsignedApk: string, outputApk: string): Promise<void> {
+  const keystore = resolve(APK_KEYSTORE);
+  await ensureApkKeystore(keystore);
+  const alignedApk = join(dirname(outputApk), `${safeFileName('DoL-Thalia')}.aligned.apk`);
+  await run([findBuildTool('zipalign'), '-f', '-p', '4', unsignedApk, alignedApk], { quiet: true });
+  await run(
+    [
+      findBuildTool('apksigner'),
+      'sign',
+      '--ks',
+      keystore,
+      '--ks-pass',
+      `pass:${APK_KEY_PASSWORD}`,
+      '--key-pass',
+      `pass:${APK_KEY_PASSWORD}`,
+      '--ks-key-alias',
+      APK_KEY_ALIAS,
+      '--out',
+      outputApk,
+      alignedApk
+    ],
+    { quiet: true }
+  );
+  await rm(alignedApk, { force: true });
+}
+
+async function ensureApkKeystore(keystore: string): Promise<void> {
+  if (existsSync(keystore)) return;
+  await mkdir(dirname(keystore), { recursive: true });
+  await run(
+    [
+      findKeytoolBin(),
+      '-genkeypair',
+      '-v',
+      '-keystore',
+      keystore,
+      '-storepass',
+      APK_KEY_PASSWORD,
+      '-keypass',
+      APK_KEY_PASSWORD,
+      '-alias',
+      APK_KEY_ALIAS,
+      '-keyalg',
+      'RSA',
+      '-keysize',
+      '2048',
+      '-validity',
+      '10000',
+      '-dname',
+      'CN=DoL Thalia, OU=Thalia, O=MaplebirchLeaf, L=Hong Kong, ST=Hong Kong, C=CN'
+    ],
+    { quiet: true }
   );
 }
 
@@ -201,6 +264,48 @@ async function applyApkIcon(androidProjectDir: string): Promise<void> {
   ]);
 }
 
+async function applyBlackLaunchTheme(androidProjectDir: string): Promise<void> {
+  const resDir = join(androidProjectDir, 'app/src/main/res');
+  const colors = `<resources>
+  <color name="cdv_background_color">#000000</color>
+  <color name="cdv_splashscreen_background">#000000</color>
+</resources>
+`;
+  await Promise.all([
+    ...['values', 'values-night', 'values-v34', 'values-night-v34'].map(dir => writeXml(join(resDir, dir, 'cdv_colors.xml'), colors)),
+    writeXml(
+      join(resDir, 'values/cdv_themes.xml'),
+      `<resources>
+  <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">@color/cdv_splashscreen_background</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/empty_splash_icon</item>
+    <item name="windowSplashScreenAnimationDuration">0</item>
+    <item name="postSplashScreenTheme">@style/Theme.Cordova.App.DayNight</item>
+  </style>
+  <style name="Theme.Cordova.App.DayNight" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <item name="android:windowBackground">@color/cdv_background_color</item>
+    <item name="android:statusBarColor">@android:color/black</item>
+    <item name="android:navigationBarColor">@android:color/black</item>
+  </style>
+</resources>
+`
+    ),
+    writeXml(
+      join(resDir, 'drawable/empty_splash_icon.xml'),
+      `<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <size android:width="1dp" android:height="1dp" />
+  <solid android:color="@android:color/transparent" />
+</shape>
+`
+    )
+  ]);
+}
+
+async function writeXml(path: string, content: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content, 'utf8');
+}
+
 async function writePng(source: string, target: string, size: number): Promise<void> {
   await mkdir(dirname(target), { recursive: true });
   if (platform !== 'win32') {
@@ -222,21 +327,23 @@ function findGradleBin(): string {
   return existsSync(local) ? local : bin;
 }
 
+function findBuildTool(tool: 'apksigner' | 'zipalign'): string {
+  const suffix = platform === 'win32' ? (tool === 'apksigner' ? '.bat' : '.exe') : '';
+  const name = `${tool}${suffix}`;
+  const buildToolsDir = join(findAndroidSdk(), 'build-tools');
+  const versions = existsSync(buildToolsDir) ? readdirSync(buildToolsDir).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
+  for (const version of versions.reverse()) {
+    const candidate = join(buildToolsDir, version, name);
+    if (existsSync(candidate)) return candidate;
+  }
+  return name;
+}
+
 export function apkBuildStatus(): ApkBuildStatus {
   const sdkPath = findAndroidSdk();
-  if (!existsSync(sdkPath)) {
-    return {
-      canBuild: false,
-      message: `未找到 Android SDK：${sdkPath}。请设置 ANDROID_HOME 或 ANDROID_SDK_ROOT。`
-    };
-  }
+  if (!existsSync(sdkPath)) return { canBuild: false, message: `Android SDK not found: ${sdkPath}. Set ANDROID_HOME or ANDROID_SDK_ROOT.` };
   const gradle = findGradleBin();
-  if (!existsSync(gradle) && gradle !== 'gradle') {
-    return {
-      canBuild: false,
-      message: `未找到 Gradle ${GRADLE_VERSION}：${gradleHome()}。`
-    };
-  }
+  if (!existsSync(gradle) && gradle !== 'gradle') return { canBuild: false, message: `Gradle ${GRADLE_VERSION} not found: ${gradleHome()}.` };
   return { canBuild: true };
 }
 
@@ -269,6 +376,13 @@ function gradleHome(): string {
   return resolve('.cache/tools', `gradle-${GRADLE_VERSION}`);
 }
 
+function findKeytoolBin(): string {
+  const javaHome = findAndroidBuildJavaHome();
+  const keytool = platform === 'win32' ? 'keytool.exe' : 'keytool';
+  const candidate = javaHome ? join(javaHome, 'bin', keytool) : '';
+  return candidate && existsSync(candidate) ? candidate : keytool;
+}
+
 function findAndroidBuildJavaHome(): string | undefined {
   const javaHome = Bun.env.JAVA_HOME;
   if (javaHome && javaMajor(javaHome) < 25) return javaHome;
@@ -295,29 +409,19 @@ function requireFile(path: string): void {
   if (!existsSync(path)) throw new Error(`Missing file: ${path}`);
 }
 
-const CORDOVA_ADDITIONS = `// Wait for the deviceready event before using any of Cordova's device APIs.
-// See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
-document.addEventListener('deviceready', onDeviceReady, false);
-function onDeviceReady() {
-  // Cordova is now initialized. Have fun!
-  // turn on the toaster
+const CORDOVA_ADDITIONS = `
+document.addEventListener('deviceready', () => {
+  let lastBackEvent = 0;
   window.Toast = cordova.plugins.rnk.toast;
-  // record the last time when back button was pressed
-  window.lastBackEvent = 0;
-  // save back button from instant seppuku and give it purpose
   document.addEventListener('backbutton', ev => {
     ev.preventDefault();
-    // back button can now close opened dialog menus
-    if (SugarCube.Dialog.isOpen()) SugarCube.Dialog.close();
-    if (window.T && T.currentOverlay) closeOverlay(); // dol-specific
-    // if no menus are open, warn that the next back button press in short succession will close the app
-    else if (Date.now() > window.lastBackEvent + 3500) {
-      Toast.showToast('\\u518d\\u6b21\\u70b9\\u51fb\\u8fd4\\u56de\\u952e\\u9000\\u51fa', Toast.LONG);
-      window.lastBackEvent = Date.now();
-    }
-    // otherwise, quit the app
-    else navigator.app.exitApp();
-    return false;
+    const dialog = window.SugarCube && window.SugarCube.Dialog;
+    if (dialog && dialog.isOpen()) dialog.close();
+    else if (window.T && window.T.currentOverlay) closeOverlay();
+    else if (Date.now() > lastBackEvent + 3500) {
+      window.Toast.showToast('\\u518d\\u6b21\\u70b9\\u51fb\\u8fd4\\u56de\\u952e\\u9000\\u51fa', window.Toast.LONG);
+      lastBackEvent = Date.now();
+    } else navigator.app.exitApp();
   }, false);
-}
+}, false);
 `;
