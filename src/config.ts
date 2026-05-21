@@ -25,7 +25,10 @@ export interface ThaliaConfig {
   paths: {
     source_html: string;
     builtin_mods: string;
+    images: string;
     output_html: string;
+    output_zip: string;
+    output_apk_dir: string;
     story_format: string;
     cordova_project: string;
   };
@@ -45,10 +48,6 @@ export async function loadConfig(configPath = 'thalia.config.toml'): Promise<Tha
   return config;
 }
 
-export function getApkVersionName(config: ThaliaConfig): string {
-  return config.game.version;
-}
-
 function validateConfig(config: ThaliaConfig): void {
   required(config.project?.name, 'project.name');
 
@@ -64,7 +63,10 @@ function validateConfig(config: ThaliaConfig): void {
 
   required(config.paths?.source_html, 'paths.source_html');
   required(config.paths?.builtin_mods, 'paths.builtin_mods');
+  required(config.paths?.images, 'paths.images');
   required(config.paths?.output_html, 'paths.output_html');
+  required(config.paths?.output_zip, 'paths.output_zip');
+  required(config.paths?.output_apk_dir, 'paths.output_apk_dir');
   required(config.paths?.story_format, 'paths.story_format');
   required(config.paths?.cordova_project, 'paths.cordova_project');
 

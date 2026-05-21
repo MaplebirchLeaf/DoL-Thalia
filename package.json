@@ -5,6 +5,12 @@
   "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
   "type": "module",
   "scripts": {
+    "ts": "tsc --noEmit",
+    "build": "bun run src/tasks/build.ts",
+    "builtin-mods": "bun run src/tasks/builtin-mods.ts",
+    "build:html": "bun run src/tasks/html.ts",
+    "build:zip": "bun run src/tasks/zip.ts",
+    "build:apk": "bun run src/tasks/apk.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
@@ -12,6 +18,8 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "cordova": "^13.0.0",
+    "fflate": "^0.8.3",
     "fs-extra": "^11.3.0"
   },
   "devDependencies": {
