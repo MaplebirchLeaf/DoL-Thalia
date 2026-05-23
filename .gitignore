@@ -22,8 +22,6 @@ input/*
 !input/mods/
 !input/mods/.gitkeep
 input/mods/**/*
-!input/mods/**/
-!input/mods/**/.gitkeep
 !input/signing/
 input/signing/*
 !input/signing/.gitkeep
