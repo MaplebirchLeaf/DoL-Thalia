@@ -319,9 +319,11 @@ async function writePng(source: string, target: string, size: number): Promise<v
 }
 
 function findCordovaBin(): string {
-  const bin = platform === 'win32' ? 'cordova.cmd' : 'cordova';
-  const local = resolve('node_modules/.bin', bin);
-  return existsSync(local) ? local : bin;
+  const candidates =
+    platform === 'win32'
+      ? [resolve('node_modules/.bin/cordova.exe'), resolve('node_modules/.bin/cordova.cmd'), resolve('node_modules/cordova/bin/cordova.cmd'), 'cordova.cmd']
+      : [resolve('node_modules/.bin/cordova'), resolve('node_modules/cordova/bin/cordova'), 'cordova'];
+  return candidates.find(candidate => candidate.includes('/') || candidate.includes('\\') ? existsSync(candidate) : true) || candidates.at(-1)!;
 }
 
 function findGradleBin(): string {
