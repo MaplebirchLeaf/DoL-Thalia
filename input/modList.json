@@ -1,0 +1,10 @@
+[
+  {
+    "name": "chs-maplebirch",
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch"]
+  },
+  {
+    "name": "chs-maplebirch-au",
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale.model"]
+  }
+]

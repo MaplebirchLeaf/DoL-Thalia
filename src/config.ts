@@ -14,8 +14,19 @@ export interface ThaliaConfig {
   };
 
   game: {
+    default_mod_list: string;
     version: string;
   };
+
+  mod_sources?: Record<
+    string,
+    {
+      asset_extensions?: string[];
+      asset_keywords: string[];
+      release_tag?: string;
+      repository: string;
+    }
+  >;
 
   upstreams: {
     sugarcube_vrelnir: UpstreamConfig;
@@ -25,7 +36,6 @@ export interface ThaliaConfig {
   paths: {
     source_html: string;
     builtin_mods: string;
-    images: string;
     output_html: string;
     output_zip: string;
     output_apk_dir: string;
@@ -51,7 +61,7 @@ export async function loadConfig(configPath = 'thalia.config.toml'): Promise<Tha
 function validateConfig(config: ThaliaConfig): void {
   required(config.project?.name, 'project.name');
 
-  required(config.game?.version, 'game.version');
+  required(config.game?.default_mod_list, 'game.default_mod_list');
 
   required(config.upstreams?.sugarcube_vrelnir?.url, 'upstreams.sugarcube_vrelnir.url');
   required(config.upstreams?.sugarcube_vrelnir?.ref, 'upstreams.sugarcube_vrelnir.ref');
@@ -63,7 +73,6 @@ function validateConfig(config: ThaliaConfig): void {
 
   required(config.paths?.source_html, 'paths.source_html');
   required(config.paths?.builtin_mods, 'paths.builtin_mods');
-  required(config.paths?.images, 'paths.images');
   required(config.paths?.output_html, 'paths.output_html');
   required(config.paths?.output_zip, 'paths.output_zip');
   required(config.paths?.output_apk_dir, 'paths.output_apk_dir');
@@ -72,6 +81,16 @@ function validateConfig(config: ThaliaConfig): void {
 
   required(config.apk?.id, 'apk.id');
   required(config.apk?.name, 'apk.name');
+
+  for (const [name, source] of Object.entries(config.mod_sources || {})) {
+    required(source.repository, `mod_sources.${name}.repository`);
+    if (!Array.isArray(source.asset_keywords) || source.asset_keywords.length === 0 || !source.asset_keywords.every(item => typeof item === 'string' && item.trim() !== '')) {
+      throw new Error(`Missing required config field: mod_sources.${name}.asset_keywords`);
+    }
+    if (source.asset_extensions && (!Array.isArray(source.asset_extensions) || !source.asset_extensions.every(item => typeof item === 'string' && item.startsWith('.')))) {
+      throw new Error(`Invalid config field: mod_sources.${name}.asset_extensions`);
+    }
+  }
 }
 
 function required(value: unknown, name: string): void {

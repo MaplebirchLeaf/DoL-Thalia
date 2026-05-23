@@ -49,9 +49,7 @@ async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModT
   const modListPath = join(modLoaderRoot, 'modList.json');
   if (!existsSync(modListPath)) throw new Error(`modList.json not found: ${modListPath}`);
   const modList = await Bun.file(modListPath).json();
-  if (!Array.isArray(modList) || !modList.every(target => typeof target === 'string')) {
-    throw new Error(`Invalid modList.json: ${modListPath}`);
-  }
+  if (!Array.isArray(modList) || !modList.every(target => typeof target === 'string')) throw new Error(`Invalid modList.json: ${modListPath}`);
   const targets = modList
     .filter(target => target.toLowerCase().endsWith('.mod.zip'))
     .map(target => {
@@ -71,48 +69,35 @@ async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModT
 async function buildBuiltinModTargets(modLoaderRoot: string, targets: BuiltinModTarget[]): Promise<void> {
   const packModZip = join(modLoaderRoot, 'dist-insertTools', 'packModZip.js');
   if (!existsSync(packModZip)) throw new Error(`Missing packModZip.js: ${packModZip}`);
-  logInfo(`内置模组数量：${targets.length}`);
-  logInfo(`构建顺序：${targets.map(T => T.name).join(' → ')}`);
-  for (const [index, target] of targets.entries()) {
-    logStep(`构建内置模组 ${index + 1}/${targets.length}：${target.name}`);
+  logInfo(`Builtin mods: ${targets.length}`);
+  logInfo(`Build order: ${targets.map(T => T.name).join(' -> ')}`);
+  for (const target of targets) {
     await cleanBuiltinModTarget(target);
-    await buildOneBuiltinMod(target.dir);
+    await runBuiltinModScripts(target.dir, ['ts:type', 'build:type', 'build:ts']);
+  }
+  for (const [index, target] of targets.entries()) {
+    logStep(`Build builtin mod ${index + 1}/${targets.length}: ${target.name}`);
+    await runBuiltinModScripts(target.dir, ['build:webpack', 'build']);
     await run(['node', packModZip, 'boot.json'], { cwd: target.dir, quiet: true });
     if (!existsSync(target.output)) throw new Error(`Missing packed mod zip: ${target.output}`);
-    logDone(`输出：${target.target}`);
+    logDone(`Output: ${target.target}`);
   }
 }
 
 async function cleanBuiltinModTarget(target: BuiltinModTarget): Promise<void> {
   await rm(target.output, { force: true });
-  for (const dirName of ['dist', 'dist-ts', 'build']) {
-    await rm(join(target.dir, dirName), {
-      recursive: true,
-      force: true
-    });
-  }
-  if (!existsSync(target.dir)) return;
+  for (const dirName of ['dist', 'dist-ts', 'build']) await rm(join(target.dir, dirName), { recursive: true, force: true });
 }
 
-async function buildOneBuiltinMod(dir: string): Promise<void> {
+async function runBuiltinModScripts(dir: string, scriptNames: string[]): Promise<void> {
   const bootJson = join(dir, 'boot.json');
   if (!existsSync(bootJson)) throw new Error(`Missing boot.json: ${bootJson}`);
   const packageJsonPath = join(dir, 'package.json');
-  if (!existsSync(packageJsonPath)) {
-    logInfo('没有 package.json，跳过源码构建');
-    return;
-  }
+  if (!existsSync(packageJsonPath)) return;
   await installDependencies(dir);
-  const packageJson = await Bun.file(packageJsonPath).json();
-  const scripts = packageJson.scripts || {};
-  const orderedScripts = ['ts:type', 'build:type', 'build:ts', 'build:webpack'].filter(scriptName => !!scripts[scriptName]);
-  if (orderedScripts.length > 0) {
-    for (const scriptName of orderedScripts) await runShell(`corepack yarn run ${scriptName}`, { cwd: dir, quiet: true });
-    return;
-  }
-  if (scripts.build) await runShell('corepack yarn run build', { cwd: dir, quiet: true });
+  const scripts = (await Bun.file(packageJsonPath).json()).scripts || {};
+  for (const scriptName of scriptNames) if (scripts[scriptName]) await runShell(`corepack yarn run ${scriptName}`, { cwd: dir, quiet: true });
 }
-
 async function installDependencies(dir: string): Promise<void> {
   if (existsSync(join(dir, '.pnp.cjs')) || existsSync(join(dir, 'node_modules'))) return;
   await runShell('corepack yarn install', { cwd: dir, quiet: true });

@@ -2,7 +2,17 @@
 name = "DoL-Thalia"
 
 [game]
-version = "0.5.8.10"
+default_mod_list = "chs-maplebirch"
+
+[mod_sources.chinese-localization]
+repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
+asset_keywords = ["GameOriginalImagePack", "ModI18N"]
+asset_extensions = [".mod.zip"]
+
+[mod_sources.maplebirch-framework]
+repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
+asset_keywords = ["maplebirch"]
+asset_extensions = [".mod.zip", ".modpack"]
 
 [upstreams.sugarcube_vrelnir]
 url = "https://gitgud.io/Vrelnir/sugarcube-2"
@@ -15,9 +25,8 @@ ref = "thalia"
 path = "vendor/sugarcube-2-ModLoader"
 
 [paths]
-source_html = "input/*.html"
+source_html = "input/game/*.zip"
 builtin_mods = "input/mods"
-images = "input/img"
 output_html = "dist/html/index.html"
 output_zip = "dist/zip/DoL-Thalia.zip"
 output_apk_dir = "dist/apk"

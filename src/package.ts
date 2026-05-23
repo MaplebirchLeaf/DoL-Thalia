@@ -2,13 +2,15 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { platform } from 'node:process';
-import { zipSync } from 'fflate';
+import { unzipSync, zipSync } from 'fflate';
 import type { ThaliaConfig } from './config';
 import { logDone, logInfo } from './log';
 import { run } from './process';
-import { buildPackageName, escapeXml, safeFileName } from './release-utils';
+import { type ReleasePreset, readDefaultReleasePreset } from './release-presets';
+import { buildReleaseAssetBaseName, buildReleaseDate, escapeXml, safeFileName } from './release-utils';
 
 const GRADLE_VERSION = '8.14.2';
+const GRADLE_DISTRIBUTION_URL = `https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip`;
 const ANDROID_PLATFORM_DIR = 'platforms/android';
 const RELEASE_UNSIGNED_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/release/app-release-unsigned.apk`;
 const APK_ICON_SOURCE = 'input/icon.png';
@@ -22,28 +24,33 @@ export interface ApkBuildStatus {
   message?: string;
 }
 
-export async function buildPlayerZip(config: ThaliaConfig): Promise<void> {
+export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: ReleasePreset): Promise<void> {
   const htmlDir = dirname(resolve(config.paths.output_html));
-  const outputZip = resolve(config.paths.output_zip);
+  const outputZipDir = dirname(resolve(config.paths.output_zip));
+  const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+  const releaseDate = buildReleaseDate();
   requireDirectory(htmlDir);
-  await mkdir(dirname(outputZip), { recursive: true });
-
-  const folderName = buildPackageName(config.project.name, config.game.version);
-  const files = await readFilesForZip(htmlDir, folderName, `${safeFileName(config.project.name)}.html`);
+  await mkdir(outputZipDir, { recursive: true });
+  const assetBaseName = buildReleaseAssetBaseName(config.project.name, config.game.version, preset.name, releaseDate);
+  const outputZip = join(outputZipDir, `${assetBaseName}.zip`);
+  const folderName = assetBaseName;
+  const files = await readFilesForZip(htmlDir, folderName, `${assetBaseName}.html`);
   await writeFile(outputZip, zipSync(files, { level: 6 }));
   logDone(`ZIP \u8f93\u51fa\uff1a${outputZip}`);
 }
 
-export async function buildApk(config: ThaliaConfig): Promise<void> {
+export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePreset): Promise<void> {
   const htmlDir = dirname(resolve(config.paths.output_html));
   const projectDir = resolve(config.paths.cordova_project);
   const androidProjectDir = join(projectDir, ANDROID_PLATFORM_DIR);
   const outputDir = resolve(config.paths.output_apk_dir);
+  const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+  const releaseDate = buildReleaseDate();
   requireDirectory(htmlDir);
   const status = apkBuildStatus();
   if (!status.canBuild) throw new Error(status.message);
   await mkdir(outputDir, { recursive: true });
-
+  await ensureGradle();
   logInfo('\u51c6\u5907 Cordova \u5de5\u7a0b');
   const projectCreated = await ensureCordovaProject(config, projectDir);
   await prepareCordovaWww(htmlDir, join(projectDir, 'www'));
@@ -55,19 +62,16 @@ export async function buildApk(config: ThaliaConfig): Promise<void> {
     logInfo('\u5237\u65b0 Cordova \u5e73\u53f0');
     await run([findCordovaBin(), 'prepare', 'android'], { cwd: projectDir, quiet: true });
   }
-
   logInfo('\u540c\u6b65 Web \u8d44\u6e90');
   await syncAndroidWww(projectDir);
   await applyApkIcon(androidProjectDir);
   await applyBlackLaunchTheme(androidProjectDir);
   await suppressAndroidJavaWarnings(androidProjectDir);
-
   logInfo('\u6253\u5305 Android Release');
   await run([findGradleBin(), 'cdvBuildRelease', '--quiet'], { cwd: androidProjectDir, env: androidBuildEnv(), quiet: true });
-
   const unsignedApk = join(projectDir, RELEASE_UNSIGNED_APK_PATH);
   requireFile(unsignedApk);
-  const outputApk = join(outputDir, `${safeFileName(config.project.name)}.apk`);
+  const outputApk = join(outputDir, `${buildReleaseAssetBaseName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
   await signApk(unsignedApk, outputApk);
   logDone(`APK \u8f93\u51fa\uff1a${outputApk}`);
 }
@@ -76,7 +80,6 @@ async function readFilesForZip(root: string, folderName: string, htmlFileName: s
   const files: Record<string, Uint8Array> = {};
   await collect(root);
   return files;
-
   async function collect(dir: string): Promise<void> {
     const entries = await readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -342,9 +345,51 @@ function findBuildTool(tool: 'apksigner' | 'zipalign'): string {
 export function apkBuildStatus(): ApkBuildStatus {
   const sdkPath = findAndroidSdk();
   if (!existsSync(sdkPath)) return { canBuild: false, message: `Android SDK not found: ${sdkPath}. Set ANDROID_HOME or ANDROID_SDK_ROOT.` };
-  const gradle = findGradleBin();
-  if (!existsSync(gradle) && gradle !== 'gradle') return { canBuild: false, message: `Gradle ${GRADLE_VERSION} not found: ${gradleHome()}.` };
   return { canBuild: true };
+}
+
+async function ensureGradle(): Promise<void> {
+  if (existsSync(findGradleBin())) return;
+  const toolsDir = resolve('.cache/tools');
+  const zipPath = join(toolsDir, `gradle-${GRADLE_VERSION}-bin.zip`);
+  await mkdir(toolsDir, { recursive: true });
+  logInfo(`Downloading Gradle ${GRADLE_VERSION}`);
+  await downloadGradle(zipPath);
+  const files = unzipSync(await readFile(zipPath));
+  for (const [name, data] of Object.entries(files)) {
+    if (name.endsWith('/')) continue;
+    const output = join(toolsDir, name);
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(output, data);
+  }
+  await rm(zipPath, { force: true });
+}
+
+async function downloadGradle(output: string): Promise<void> {
+  try {
+    const response = await fetch(GRADLE_DISTRIBUTION_URL);
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    await writeFile(output, new Uint8Array(await response.arrayBuffer()));
+  } catch (error) {
+    await rm(output, { force: true });
+    if (platform === 'win32') {
+      await run(
+        [
+          'powershell',
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri $args[0] -OutFile $args[1]",
+          GRADLE_DISTRIBUTION_URL,
+          output
+        ],
+        { quiet: true }
+      );
+      return;
+    }
+    await run(['curl', '-L', GRADLE_DISTRIBUTION_URL, '-o', output], { quiet: true });
+  }
 }
 
 function androidBuildEnv(): Record<string, string | undefined> {

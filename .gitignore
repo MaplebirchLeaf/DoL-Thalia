@@ -1,11 +1,36 @@
+# dependencies
 node_modules/
-input/
+
+# build outputs and caches
 dist/
 .cache/
 temp/
 publish/
-.DS_Store
+site/public/play/
 *.log
 
+# local game/mod/signing inputs
+input/*
+!input/modList.json
+!input/icon.png
+!input/.gitkeep
+
+# keep the input directory shape without committing large packages
+!input/
+!input/game/
+!input/game/.gitkeep
+!input/mods/
+!input/mods/.gitkeep
+input/mods/**/*
+!input/mods/**/
+!input/mods/**/.gitkeep
+!input/signing/
+input/signing/*
+!input/signing/.gitkeep
+
+# local vendor checkouts
 /vendor/*
 !/vendor/sugarcube-2-ModLoader/
+
+# system files
+.DS_Store

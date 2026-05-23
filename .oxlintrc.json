@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["node_modules/", "dist/", "publish/", "temp/", "input/", "vendor/", ".cache/"],
+  "ignorePatterns": ["node_modules/", "dist/", "publish/", "temp/", "input/", "vendor/", ".cache/", "site/public/play/"],
   "plugins": ["import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
   "rules": {
     "no-implied-eval": "off",

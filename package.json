@@ -5,30 +5,33 @@
   "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
   "type": "module",
   "scripts": {
-    "ts": "tsc --noEmit",
-    "build": "bun run src/tasks/build.ts",
-    "builtin-mods": "bun run src/tasks/builtin-mods.ts",
-    "build:html": "bun run src/tasks/html.ts",
-    "build:zip": "bun run src/tasks/zip.ts",
-    "build:apk": "bun run src/tasks/apk.ts",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "build": "bun run build:all",
+    "build:all": "bun run sync:mods && bun run src/tasks/build.ts && bun run play:sync && bun run site:build",
+    "build:local": "bun run src/tasks/build.ts",
+    "check": "tsc --noEmit && oxlint && oxfmt --check",
+    "play:sync": "bun run src/tasks/play.ts",
+    "sync:mods": "bun run src/tasks/sync-mods.ts",
+    "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
+    "site:build": "bun run src/tasks/site.ts && vite build --config site/vite.config.ts",
+    "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
+    "fix": "oxlint --fix && oxfmt"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "cordova": "^13.0.0",
     "fflate": "^0.8.3",
-    "fs-extra": "^11.3.0"
+    "fs-extra": "^11.3.0",
+    "vue": "^3.5.34"
   },
   "devDependencies": {
     "@types/bun": "1.3.14",
+    "@vitejs/plugin-vue": "^6.0.7",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
     "oxlint-tsgolint": "^0.14.2",
     "terser": "^5.47.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
   },
   "packageManager": "bun@1.3.14"
 }

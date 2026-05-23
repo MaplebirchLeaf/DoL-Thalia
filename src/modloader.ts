@@ -8,6 +8,7 @@ import { run, runShell } from './process';
 export async function buildModLoaderTools(config: ThaliaConfig): Promise<void> {
   const root = resolve(config.upstreams.modloader.path);
   await installDependencies(root);
+  await runShell('corepack yarn run ts:BeforeSC2', { cwd: root, quiet: true });
   await runShell('corepack yarn run webpack:BeforeSC2', { cwd: root, quiet: true });
   await runShell('corepack yarn run ts:ForSC2', { cwd: root, quiet: true });
   await runShell('corepack yarn run webpack:insertTools', { cwd: root, quiet: true });
