@@ -40,7 +40,7 @@ function toggleMod(url: string) {
 }
 
 function toggleVersion(version: SiteVersion) {
-  selectedVersion.value = selectedVersion.value?.version === version.version ? undefined : version;
+  selectedVersion.value = selectedVersion.value === version ? undefined : version;
 }
 
 function updateBackTop() {
@@ -121,7 +121,7 @@ onUnmounted(() => {
           <label>
             基础版本
             <select>
-              <option v-for="version in versions" :key="version.version">{{ version.version }}</option>
+              <option v-for="version in versions" :key="version">{{ version }}</option>
               <option v-if="!versions.length">待发布</option>
             </select>
           </label>
@@ -165,16 +165,16 @@ onUnmounted(() => {
       </div>
 
       <div v-if="versions.length" class="version-list">
-        <article v-for="version in versions" :key="version.version" :class="{ selected: selectedVersion?.version === version.version }" class="version-row">
+        <article v-for="version in versions" :key="version" :class="{ selected: selectedVersion === version }" class="version-row">
           <div class="version-summary" @click="toggleVersion(version)">
             <div>
-              <h3>{{ version.version }}</h3>
+              <h3>{{ version }}</h3>
               <p>选择此版本</p>
             </div>
-            <span>{{ selectedVersion?.version === version.version ? '收起' : '展开' }}</span>
+            <span>{{ selectedVersion === version ? '收起' : '展开' }}</span>
           </div>
           <Transition name="drawer">
-            <div v-if="selectedVersion?.version === version.version" class="version-detail-shell">
+            <div v-if="selectedVersion === version" class="version-detail-shell">
               <section class="version-detail">
                 <div class="version-detail-head">
                   <h3>{{ releaseTag(version) }}</h3>

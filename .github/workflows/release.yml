@@ -24,10 +24,24 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
+
+      - name: Install Cordova
+        run: npm install -g cordova@13
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -41,14 +55,33 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
+          $releaseTag = $env:INPUT_TAG
+
+          if ([string]::IsNullOrWhiteSpace($releaseTag)) {
+            if ($env:GITHUB_REF_TYPE -eq 'tag') {
+              $releaseTag = $env:GITHUB_REF_NAME
+            } else {
+              $releaseTag = "build-$env:GITHUB_RUN_NUMBER"
+            }
+          }
+
           $assets = @()
           if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File }
           if (Test-Path dist/apk) { $assets += Get-ChildItem dist/apk -File }
           if ($assets.Count -eq 0) { throw "No release assets found in dist/zip or dist/apk." }
-          gh release view $env:RELEASE_TAG *> $null
+
+          git fetch --tags
+
+          git rev-parse -q --verify "refs/tags/$releaseTag" *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $env:RELEASE_TAG --title $env:RELEASE_TAG --notes "DoL-Thalia $env:RELEASE_TAG"
+            git tag $releaseTag $env:GITHUB_SHA
+            git push origin $releaseTag
           }
-          gh release upload $env:RELEASE_TAG @($assets.FullName) --clobber
+
+          gh release view $releaseTag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $releaseTag --title $releaseTag --notes "DoL-Thalia $releaseTag"
+          }
+          gh release upload $releaseTag @($assets.FullName) --clobber

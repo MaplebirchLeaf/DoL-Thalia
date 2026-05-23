@@ -12,9 +12,7 @@ export type ReleasePreset = {
   name: string;
 };
 
-export type SiteVersion = {
-  version: string;
-};
+export type SiteVersion = string;
 
 export type FaqItem = {
   answer: string;
