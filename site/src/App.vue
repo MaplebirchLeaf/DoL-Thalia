@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { faqItems, homeNotices, visibleNavItems } from './content';
 import { mods, release, versions } from './data';
-import { releaseAssetUrl } from './releases';
+import { releaseTag, releaseAssetUrl } from './releases';
 import type { PageKey, SiteVersion } from './types';
 
 const page = ref<PageKey>('home');
@@ -22,10 +22,6 @@ const navItems = computed(() => {
 });
 
 const selectedModList = computed(() => mods.filter(mod => selectedMods.value.has(mod.url)));
-
-function displayVersion(version: string): string {
-  return version.startsWith('v') ? version : `v${version}`;
-}
 
 function setPage(nextPage: PageKey) {
   if (nextPage === 'mods' && !modsUnlocked.value) return;
@@ -129,7 +125,7 @@ onUnmounted(() => {
           <label>
             基础版本
             <select>
-              <option v-for="version in versions" :key="version">{{ displayVersion(version) }}</option>
+              <option v-for="version in versions" :key="version">{{ releaseTag(version) }}</option>
               <option v-if="!versions.length">待发布</option>
             </select>
           </label>
@@ -176,7 +172,7 @@ onUnmounted(() => {
         <article v-for="version in versions" :key="version" :class="{ selected: selectedVersion === version }" class="version-row">
           <div class="version-summary" @click="toggleVersion(version)">
             <div>
-              <h3>{{ displayVersion(version) }}</h3>
+              <h3>{{ releaseTag(version) }}</h3>
               <p>选择此版本</p>
             </div>
             <span>{{ selectedVersion === version ? '收起' : '展开' }}</span>
@@ -191,8 +187,8 @@ onUnmounted(() => {
                 </div>
                 <div v-for="preset in release" :key="preset.name" class="download-row">
                   <span class="download-title">{{ preset.title }}</span>
-                  <a :href="releaseAssetUrl(version, preset.name, 'zip')">ZIP 下载</a>
-                  <a :href="releaseAssetUrl(version, preset.name, 'apk')">APK 下载</a>
+                  <a :href="releaseAssetUrl(version, preset.name, 'zip')">GitHub 下载</a>
+                  <a :href="releaseAssetUrl(version, preset.name, 'apk')">GitHub 下载</a>
                 </div>
               </div>
             </div>
