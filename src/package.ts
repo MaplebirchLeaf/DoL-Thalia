@@ -7,7 +7,7 @@ import type { ThaliaConfig } from './config';
 import { logDone, logInfo } from './log';
 import { run } from './process';
 import { type ReleasePreset, readDefaultReleasePreset } from './release-presets';
-import { buildReleaseAssetBaseName, buildReleaseDate, escapeXml, safeFileName } from './release-utils';
+import { buildReleaseAssetName, escapeXml, safeFileName } from './release-utils';
 
 const GRADLE_VERSION = '8.14.2';
 const GRADLE_DISTRIBUTION_URL = `https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip`;
@@ -28,10 +28,10 @@ export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: Relea
   const htmlDir = dirname(resolve(config.paths.output_html));
   const outputZipDir = dirname(resolve(config.paths.output_zip));
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-  const releaseDate = buildReleaseDate();
+  const releaseDate = Bun.env.THALIA_RELEASE_DATE as string;
   requireDirectory(htmlDir);
   await mkdir(outputZipDir, { recursive: true });
-  const assetBaseName = buildReleaseAssetBaseName(config.project.name, config.game.version, preset.name, releaseDate);
+  const assetBaseName = buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate);
   const outputZip = join(outputZipDir, `${assetBaseName}.zip`);
   const folderName = assetBaseName;
   const files = await readFilesForZip(htmlDir, folderName, `${assetBaseName}.html`);
@@ -45,7 +45,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const androidProjectDir = join(projectDir, ANDROID_PLATFORM_DIR);
   const outputDir = resolve(config.paths.output_apk_dir);
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-  const releaseDate = buildReleaseDate();
+  const releaseDate = Bun.env.THALIA_RELEASE_DATE as string;
   requireDirectory(htmlDir);
   const status = apkBuildStatus();
   if (!status.canBuild) throw new Error(status.message);
@@ -75,7 +75,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   });
   const unsignedApk = join(projectDir, RELEASE_UNSIGNED_APK_PATH);
   requireFile(unsignedApk);
-  const outputApk = join(outputDir, `${buildReleaseAssetBaseName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
+  const outputApk = join(outputDir, `${buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
   await signApk(unsignedApk, outputApk);
   logDone(`APK 输出：${outputApk}`);
 }

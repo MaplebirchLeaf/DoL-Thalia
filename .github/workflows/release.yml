@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to create or update
-        required: false
+        description: Release tag to create or update, for example v0.5.8.10-0524
+        required: true
         type: string
 
 permissions:
@@ -23,6 +23,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        shell: pwsh
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          $releaseTag = $env:INPUT_TAG
+          if ([string]::IsNullOrWhiteSpace($releaseTag)) { if ($env:GITHUB_REF_TYPE -eq 'tag') { $releaseTag = $env:GITHUB_REF_NAME } }
+          $releaseDate = $releaseTag -replace '^.*-(\d{4})$', '$1'
+
+          "THALIA_RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
+          "THALIA_RELEASE_DATE=$releaseDate" >> $env:GITHUB_ENV
+
+          Write-Host "Release tag: $releaseTag"
+          Write-Host "Release date: $releaseDate"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,17 +71,9 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          $releaseTag = $env:INPUT_TAG
-
-          if ([string]::IsNullOrWhiteSpace($releaseTag)) {
-            if ($env:GITHUB_REF_TYPE -eq 'tag') {
-              $releaseTag = $env:GITHUB_REF_NAME
-            } else {
-              $releaseTag = "build-$env:GITHUB_RUN_NUMBER"
-            }
-          }
+          $releaseTag = $env:THALIA_RELEASE_TAG
+          if ([string]::IsNullOrWhiteSpace($releaseTag)) { throw "Missing THALIA_RELEASE_TAG." }
 
           $assets = @()
           if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File | Where-Object { $_.Extension -ne '.idsig' } }
@@ -84,4 +92,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create $releaseTag --title $releaseTag --notes "DoL-Thalia $releaseTag"
           }
+
           gh release upload $releaseTag @($assets.FullName) --clobber
