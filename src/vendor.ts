@@ -12,6 +12,8 @@ export async function syncGitRepo(repo: UpstreamConfig): Promise<void> {
     await run(['git', 'clone', repo.url, repoPath], { quiet: true });
   }
 
+  if (Bun.env.GITHUB_ACTIONS === 'true') return;
+
   try {
     await run(['git', 'fetch', '--all', '--tags'], { cwd: repoPath, quiet: true, printOutputOnError: false });
     await run(['git', 'checkout', repo.ref], { cwd: repoPath, quiet: true, printOutputOnError: false });
