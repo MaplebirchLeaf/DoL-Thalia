@@ -24,6 +24,9 @@ input/*
 input/mods/**/*
 !input/mods/**/
 !input/mods/**/.gitkeep
+!input/mods/*/*.zip
+!input/mods/*/*.mod.zip
+!input/mods/*/*.modpack
 !input/signing/
 input/signing/*
 !input/signing/.gitkeep
