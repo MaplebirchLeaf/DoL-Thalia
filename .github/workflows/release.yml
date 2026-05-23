@@ -1,11 +1,14 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag to create or update
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -38,7 +41,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           $assets = @()
           if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File }
