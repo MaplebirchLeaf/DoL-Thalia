@@ -11,6 +11,7 @@
     "check": "tsc --noEmit && oxlint && oxfmt --check",
     "play:sync": "bun run src/tasks/play.ts",
     "sync:mods": "bun run src/tasks/sync-mods.ts",
+    "site:publish": "bun run sync:mods && bun run src/tasks/site-play.ts && bun run site:build",
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
     "site:build": "bun run src/tasks/site.ts && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
