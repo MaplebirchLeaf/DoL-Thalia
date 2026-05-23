@@ -7,6 +7,6 @@ export function releaseTag(version: SiteVersion) {
 }
 
 export function releaseAssetUrl(version: SiteVersion, presetName: string, extension: 'apk' | 'zip') {
-  const file = `DoL-Thalia-${version}-${presetName}.${extension}`;
+  const file = `DoL-Thalia-${version.replace(/-\d{4}$/, '')}-${presetName}.${extension}`;
   return `${REPOSITORY_RELEASES}/download/${releaseTag(version)}/${file}`;
 }
