@@ -68,8 +68,8 @@ jobs:
           }
 
           $assets = @()
-          if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File }
-          if (Test-Path dist/apk) { $assets += Get-ChildItem dist/apk -File }
+          if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File | Where-Object { $_.Extension -ne '.idsig' } }
+          if (Test-Path dist/apk) { $assets += Get-ChildItem dist/apk -File | Where-Object { $_.Extension -ne '.idsig' } }
           if ($assets.Count -eq 0) { throw "No release assets found in dist/zip or dist/apk." }
 
           git fetch --tags

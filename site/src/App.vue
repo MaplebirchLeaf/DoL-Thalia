@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { faqItems, homeNotices, visibleNavItems } from './content';
 import { mods, release, versions } from './data';
-import { releaseAssetUrl, releaseTag, releaseUrl } from './releases';
+import { releaseAssetUrl } from './releases';
 import type { PageKey, SiteVersion } from './types';
 
 const page = ref<PageKey>('home');
@@ -11,6 +11,10 @@ const selectedVersion = ref<SiteVersion | undefined>();
 const selectedMods = ref<Set<string>>(new Set());
 const showBackTop = ref(false);
 
+const baseUrl = import.meta.env.BASE_URL;
+const playUrl = `${baseUrl}play/latest/index.html`;
+const iconUrl = `${baseUrl}assets/icon.png`;
+
 const navItems = computed(() => {
   const items: Array<{ key: PageKey; label: string }> = [...visibleNavItems];
   if (modsUnlocked.value) items.splice(1, 0, { key: 'mods', label: '模组' });
@@ -18,6 +22,10 @@ const navItems = computed(() => {
 });
 
 const selectedModList = computed(() => mods.filter(mod => selectedMods.value.has(mod.url)));
+
+function displayVersion(version: string): string {
+  return version.startsWith('v') ? version : `v${version}`;
+}
 
 function setPage(nextPage: PageKey) {
   if (nextPage === 'mods' && !modsUnlocked.value) return;
@@ -75,7 +83,7 @@ onUnmounted(() => {
 <template>
   <header class="site-header">
     <a class="brand" href="#" @click.prevent="setPage('home')">
-      <img src="/assets/icon.png" alt="" />
+      <img :src="iconUrl" alt="" />
       <span>DoL-Thalia</span>
     </a>
     <nav class="nav">
@@ -95,7 +103,7 @@ onUnmounted(() => {
 
         <div class="home-actions">
           <button class="primary" type="button" @click="setPage('versions')">进入版本选择</button>
-          <a class="secondary" href="/play/latest/index.html">在线游玩</a>
+          <a class="secondary" :href="playUrl">在线游玩</a>
         </div>
       </div>
 
@@ -121,7 +129,7 @@ onUnmounted(() => {
           <label>
             基础版本
             <select>
-              <option v-for="version in versions" :key="version">{{ version }}</option>
+              <option v-for="version in versions" :key="version">{{ displayVersion(version) }}</option>
               <option v-if="!versions.length">待发布</option>
             </select>
           </label>
@@ -168,31 +176,25 @@ onUnmounted(() => {
         <article v-for="version in versions" :key="version" :class="{ selected: selectedVersion === version }" class="version-row">
           <div class="version-summary" @click="toggleVersion(version)">
             <div>
-              <h3>{{ version }}</h3>
+              <h3>{{ displayVersion(version) }}</h3>
               <p>选择此版本</p>
             </div>
             <span>{{ selectedVersion === version ? '收起' : '展开' }}</span>
           </div>
           <Transition name="drawer">
             <div v-if="selectedVersion === version" class="version-detail-shell">
-              <section class="version-detail">
-                <div class="version-detail-head">
-                  <h3>{{ releaseTag(version) }}</h3>
-                  <a :href="releaseUrl(version)">GitHub Release</a>
+              <div class="download-table-lite">
+                <div class="download-row head">
+                  <span>版本选择</span>
+                  <span>ZIP</span>
+                  <span>APK</span>
                 </div>
-                <div class="download-table-lite">
-                  <div class="download-row head">
-                    <span>版本选择</span>
-                    <span>ZIP</span>
-                    <span>APK</span>
-                  </div>
-                  <div v-for="preset in release" :key="preset.name" class="download-row">
-                    <span>{{ preset.name }}</span>
-                    <a :href="releaseAssetUrl(version, preset.name, 'zip')">GitHub 下载</a>
-                    <a :href="releaseAssetUrl(version, preset.name, 'apk')">GitHub 下载</a>
-                  </div>
+                <div v-for="preset in release" :key="preset.name" class="download-row">
+                  <span class="download-title">{{ preset.title }}</span>
+                  <a :href="releaseAssetUrl(version, preset.name, 'zip')">ZIP 下载</a>
+                  <a :href="releaseAssetUrl(version, preset.name, 'apk')">APK 下载</a>
                 </div>
-              </section>
+              </div>
             </div>
           </Transition>
         </article>

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 export interface ReleasePreset {
   mods: string[];
   name: string;
+  title?: string;
 }
 
 const RELEASE_PRESETS_SOURCE = 'input/modList.json';
@@ -27,6 +28,7 @@ export function validateReleasePresets(presets: ReleasePreset[], source = RELEAS
   for (const preset of presets) {
     if (!preset || typeof preset !== 'object') throw new Error(`${source} contains an invalid preset.`);
     if (typeof preset.name !== 'string' || !/^[a-z0-9][a-z0-9-]*$/i.test(preset.name)) throw new Error(`Release preset name must be file-safe: ${String(preset.name)}`);
+    if (preset.title !== undefined && (typeof preset.title !== 'string' || preset.title.trim() === '')) throw new Error(`Release preset title must be a non-empty string: ${preset.name}`);
     if (names.has(preset.name)) throw new Error(`Duplicate release preset name: ${preset.name}`);
     names.add(preset.name);
     if (!Array.isArray(preset.mods)) throw new Error(`Release preset mods must be an array: ${preset.name}`);

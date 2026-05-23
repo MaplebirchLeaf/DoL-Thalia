@@ -1,9 +1,11 @@
 [
   {
+    "title": "基础",
     "name": "chs-maplebirch",
     "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch"]
   },
   {
+    "title": "AU-F",
     "name": "chs-maplebirch-au-f",
     "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale.model_v0.8.7"]
   }
