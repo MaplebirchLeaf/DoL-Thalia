@@ -4,7 +4,7 @@
     "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch"]
   },
   {
-    "name": "chs-maplebirch-au",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale.model"]
+    "name": "chs-maplebirch-au-f",
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale.model_v0.8.7"]
   }
 ]

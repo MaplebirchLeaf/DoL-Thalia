@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import type { ThaliaConfig } from './config';
 import { logDone, logInfo, logWarn } from './log';
 
@@ -31,13 +31,21 @@ export async function syncModSources(config: ThaliaConfig): Promise<void> {
   }
 
   for (const [sourceName, source] of sources) {
+    if (source.asset_urls?.length) {
+      await syncUrlAssets(config, sourceName, source.asset_urls);
+      continue;
+    }
+
+    if (!source.repository) throw new Error(`Missing repository for mod source: ${sourceName}`);
+    const keywords = source.asset_keywords || [];
     const extensions = source.asset_extensions || DEFAULT_ASSET_EXTENSIONS;
-    if (await hasAllLocalAssets(config, source.asset_keywords, extensions)) {
+    if (await hasAllLocalAssets(config, keywords, extensions)) {
       logDone(`本地模组源已就绪：${sourceName}`);
       continue;
     }
+
     const release = await fetchRelease(source.repository, source.release_tag || (await resolveReleaseTag(sourceName, source.repository, config)));
-    const assets = source.asset_keywords.map(keyword => selectAsset(release, keyword, extensions, config.game.version));
+    const assets = keywords.map(keyword => selectAsset(release, keyword, extensions, config.game.version));
     for (const asset of assets) {
       const outputDir = resolve(config.paths.builtin_mods, config.game.version, asset.keyword);
       await mkdir(outputDir, { recursive: true });
@@ -49,6 +57,28 @@ export async function syncModSources(config: ThaliaConfig): Promise<void> {
       await downloadAsset(asset, outputDir);
     }
   }
+}
+
+async function syncUrlAssets(config: ThaliaConfig, sourceName: string, urls: string[]): Promise<void> {
+  const outputDir = resolve(config.paths.builtin_mods, config.game.version, sourceName);
+  await mkdir(outputDir, { recursive: true });
+  for (const url of urls) {
+    const fileName = fileNameFromUrl(url);
+    const output = join(outputDir, fileName);
+    if (existsSync(output)) {
+      logDone(`已存在：${fileName}`);
+      continue;
+    }
+    logInfo(`下载：${fileName}`);
+    await downloadFile(url, output);
+    logDone(`已保存：${output}`);
+  }
+}
+
+function fileNameFromUrl(url: string): string {
+  const fileName = basename(decodeURIComponent(new URL(url).pathname));
+  if (!fileName) throw new Error(`Cannot infer file name from URL: ${url}`);
+  return fileName;
 }
 
 async function hasAllLocalAssets(config: ThaliaConfig, keywords: string[], extensions: string[]): Promise<boolean> {

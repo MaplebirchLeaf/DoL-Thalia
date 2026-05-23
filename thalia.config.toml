@@ -14,6 +14,9 @@ repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
+[mod_sources."AUfemale.model_v0.8.7"]
+asset_urls = ["https://github.com/AOKIUTAGE/UTAGEsDOL3.0/releases/download/mod/AUfemale.model_v0.8.7.zip"]
+
 [upstreams.sugarcube_vrelnir]
 url = "https://gitgud.io/Vrelnir/sugarcube-2"
 ref = "new-year-new-rebase"
