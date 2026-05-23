@@ -1,6 +1,6 @@
 {
   "name": "dol-thalia",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
   "type": "module",
