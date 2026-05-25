@@ -3,6 +3,7 @@ name = "DoL-Thalia"
 
 [game]
 default_mod_list = "chs-maplebirch"
+version = "0.5.9.8"
 
 [mod_sources.chinese-localization]
 repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
@@ -14,8 +15,14 @@ repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
-[mod_sources."AUfemale.model_v0.8.7"]
+[mod_sources."AUfemale"]
 asset_urls = ["https://github.com/AOKIUTAGE/UTAGEsDOL3.0/releases/download/mod/AUfemale.model_v0.8.7.zip"]
+
+[mod_sources."AUmale"]
+asset_urls = ["https://github.com/AOKIUTAGE/UTAGEsDOL3.0/releases/download/mod/AUmale.model_v0.3.7.zip"]
+
+[mod_sources."AUandrogynous"]
+asset_urls = ["https://github.com/AOKIUTAGE/UTAGEsDOL3.0/releases/download/mod/AUandrogynous.model_v0.0.7.zip"]
 
 [upstreams.sugarcube_vrelnir]
 url = "https://gitgud.io/Vrelnir/sugarcube-2"

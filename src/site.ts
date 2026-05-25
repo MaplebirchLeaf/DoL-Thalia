@@ -7,11 +7,10 @@ export interface SiteReleasePreset {
   name: string;
 }
 
-const RELEASE_PRESETS_SOURCE = 'input/modList.json';
 const RELEASE_PRESETS_SITE_DATA = 'site/data/release.json';
 
 export async function syncSiteData(): Promise<void> {
-  const presets = await readReleasePresets(RELEASE_PRESETS_SOURCE);
+  const presets = await readReleasePresets();
   const sitePresets: SiteReleasePreset[] = presets.map(({ name, title }) => ({
     title: title ?? name,
     name

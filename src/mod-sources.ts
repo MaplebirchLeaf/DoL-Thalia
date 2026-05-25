@@ -23,8 +23,8 @@ interface SelectedAsset extends GitHubReleaseAsset {
 
 const DEFAULT_ASSET_EXTENSIONS = ['.mod.zip', '.modpack'];
 
-export async function syncModSources(config: ThaliaConfig): Promise<void> {
-  const sources = Object.entries(config.mod_sources || {});
+export async function syncModSources(config: ThaliaConfig, requiredMods?: string[]): Promise<void> {
+  const sources = Object.entries(config.mod_sources || {}).filter(([sourceName, source]) => shouldSyncSource(sourceName, source.asset_keywords, requiredMods));
   if (sources.length === 0) {
     logWarn('没有配置 mod_sources，跳过模组源同步。');
     return;
@@ -47,7 +47,7 @@ export async function syncModSources(config: ThaliaConfig): Promise<void> {
     const release = await fetchRelease(source.repository, source.release_tag || (await resolveReleaseTag(sourceName, source.repository, config)));
     const assets = keywords.map(keyword => selectAsset(release, keyword, extensions, config.game.version));
     for (const asset of assets) {
-      const outputDir = resolve(config.paths.builtin_mods, config.game.version, asset.keyword);
+      const outputDir = resolve(config.paths.builtin_mods, config.game.version);
       await mkdir(outputDir, { recursive: true });
       if (await hasLocalAsset(outputDir, asset.keyword, extensions, config.game.version)) {
         logDone(`已存在：${asset.keyword}`);
@@ -59,8 +59,14 @@ export async function syncModSources(config: ThaliaConfig): Promise<void> {
   }
 }
 
+function shouldSyncSource(sourceName: string, assetKeywords: string[] | undefined, requiredMods: string[] | undefined): boolean {
+  if (!requiredMods) return true;
+  const sourceKeys = [sourceName, ...(assetKeywords || [])];
+  return sourceKeys.some(sourceKey => requiredMods.some(requiredMod => sourceKey.includes(requiredMod) || requiredMod.includes(sourceKey)));
+}
+
 async function syncUrlAssets(config: ThaliaConfig, sourceName: string, urls: string[]): Promise<void> {
-  const outputDir = resolve(config.paths.builtin_mods, config.game.version, sourceName);
+  const outputDir = resolve(config.paths.builtin_mods, config.game.version);
   await mkdir(outputDir, { recursive: true });
   for (const url of urls) {
     const fileName = fileNameFromUrl(url);
@@ -83,7 +89,7 @@ function fileNameFromUrl(url: string): string {
 
 async function hasAllLocalAssets(config: ThaliaConfig, keywords: string[], extensions: string[]): Promise<boolean> {
   for (const keyword of keywords) {
-    const outputDir = resolve(config.paths.builtin_mods, config.game.version, keyword);
+    const outputDir = resolve(config.paths.builtin_mods, config.game.version);
     if (!(await hasLocalAsset(outputDir, keyword, extensions, config.game.version))) return false;
   }
   return true;

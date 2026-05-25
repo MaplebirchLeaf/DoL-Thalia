@@ -22,13 +22,20 @@ interface GameInput {
   sourceHtml: string;
 }
 
+export interface BuildHtmlOptions {
+  embedIndexDBMods?: boolean;
+  releasePreset?: ReleasePreset;
+}
+
 const EMBEDDED_MOD_BASE64_PART_SIZE = 1024 * 1024;
 const INDEXDB_MOD_EXTENSIONS = ['.mod.zip', '.zip', '.modpack'];
 const MODPACK_MAGIC = new Uint8Array([0x4a, 0x65, 0x72, 0x65, 0x6d, 0x69, 0x65, 0x4d, 0x6f, 0x64, 0x4c, 0x6f, 0x61, 0x64, 0x65, 0x72]);
 const MODPACK_HEADER_OFFSET = 64;
 const RUNTIME_SIDECAR_FILES = ['style.css', 'DolSettingsExport.json'];
 
-export async function buildHtml(config: ThaliaConfig, releasePreset?: ReleasePreset): Promise<void> {
+export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions | ReleasePreset = {}): Promise<void> {
+  const buildOptions: BuildHtmlOptions = 'mods' in options ? { releasePreset: options } : options;
+  const embedIndexDBMods = buildOptions.embedIndexDBMods ?? true;
   const outputHtml = resolve(config.paths.output_html);
   const outputDir = dirname(outputHtml);
   const storyFormat = resolve(config.paths.story_format);
@@ -56,8 +63,8 @@ export async function buildHtml(config: ThaliaConfig, releasePreset?: ReleasePre
     const cacheHtml = join(cacheDir, 'index.html');
     await copyFile(gameInput.sourceHtml, cacheHtml);
     const localModTargets = await readModLoaderLocalModTargets(modLoaderRoot);
-    const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-    const indexDBModFiles = await listIndexDBModFiles(inputModsDir, config.game.version, preset.mods);
+    const preset = buildOptions.releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+    const indexDBModFiles = embedIndexDBMods ? await listIndexDBModFiles(inputModsDir, config.game.version, preset.mods) : [];
     await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
     await run(['node', sc2ReplaceTool, cacheHtml, storyFormat], { quiet: true });
     const replacedHtml = `${cacheHtml}.sc2replace.html`;
@@ -65,7 +72,7 @@ export async function buildHtml(config: ThaliaConfig, releasePreset?: ReleasePre
     await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });
     const generatedModHtml = `${replacedHtml}.mod.html`;
     requireFile(generatedModHtml);
-    await insertIndexDBMods(generatedModHtml, indexDBModFiles);
+    if (embedIndexDBMods) await insertIndexDBMods(generatedModHtml, indexDBModFiles);
     await minifySugarCubeScript(generatedModHtml);
     await copyFile(generatedModHtml, outputHtml);
     await copyRuntimeAssets({
@@ -172,16 +179,14 @@ async function listIndexDBModFiles(modsRoot: string, gameVersion: string, modSou
   const versionDir = join(modsRoot, gameVersion);
   for (const sourceName of modSourceNames) {
     const sourceFiles = await findModSourceFiles(versionDir, sourceName);
-    if (sourceFiles.length === 0) throw new Error(`Missing mod source files: ${join(versionDir, sourceName)}`);
+    if (sourceFiles.length === 0) throw new Error(`Missing mod source files: ${sourceName} in ${versionDir}`);
     result.push(...sourceFiles.sort());
   }
   return result;
 }
 
 async function findModSourceFiles(versionDir: string, sourceName: string): Promise<string[]> {
-  const sourceDir = join(versionDir, sourceName);
   const result: string[] = [];
-  if (existsSync(sourceDir)) await collectModFiles(sourceDir, result);
   const entries = existsSync(versionDir) ? await readdir(versionDir, { withFileTypes: true }) : [];
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.includes(sourceName) || !isIndexDBModFile(entry.name)) continue;

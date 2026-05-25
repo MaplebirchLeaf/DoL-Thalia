@@ -7,6 +7,16 @@
   {
     "title": "AU-F",
     "name": "chs-maplebirch-au-f",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale.model_v0.8.7"]
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale"]
+  },
+  {
+    "title": "AU-M",
+    "name": "chs-maplebirch-au-m",
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUmale"]
+  },
+  {
+    "title": "AU-A",
+    "name": "chs-maplebirch-au-a",
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUandrogynous"]
   }
 ]

@@ -1,15 +1,10 @@
-export type PageKey = 'home' | 'mods' | 'versions' | 'help';
+export type PageKey = 'home' | 'versions' | 'help';
 
-export type SiteMod = {
-  author?: string;
-  description?: string;
-  name: string;
-  repository?: string;
-  url: string;
-};
+export type Language = 'zh' | 'en';
 
 export type ReleasePreset = {
   name: string;
+  title: string;
 };
 
 export type SiteVersion = string;

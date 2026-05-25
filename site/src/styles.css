@@ -82,6 +82,12 @@ button {
   image-rendering: pixelated;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .nav {
   display: flex;
   gap: 4px;
@@ -114,6 +120,36 @@ button {
 .nav button:hover {
   color: var(--accent);
   background: #ffffff;
+}
+
+.language-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f9f4ee;
+}
+
+.language-switch button {
+  min-width: 70px;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text-soft);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.language-switch button.active,
+.language-switch button:hover {
+  color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(66, 33, 11, 0.12);
 }
 
 main {
@@ -160,8 +196,6 @@ main {
 }
 
 .hero-copy,
-.builder-panel,
-.mod-card,
 .version-row,
 .home-notice {
   border: 1px solid var(--border);
@@ -197,16 +231,13 @@ main {
 
 .home-statement a,
 .home-notice a,
-.mod-meta a,
-.mod-actions a,
 .version-detail-head a {
   color: var(--accent);
   font-weight: 700;
 }
 
 .home-statement a,
-.home-notice a,
-.mod-actions a {
+.home-notice a {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -287,10 +318,8 @@ main {
   transform: translateY(-1px);
 }
 
-.mod-card p,
 .version-row p,
-.section-head p,
-.builder-panel p {
+.section-head p {
   color: var(--text-soft);
 }
 
@@ -318,127 +347,20 @@ main {
   line-height: 1.7;
 }
 
-.mod-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
-
-.mod-card {
-  display: grid;
-  gap: 16px;
-  padding: 18px;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-}
-
-.mod-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-1px);
-}
-
-.mod-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.mod-card-head > div:first-child {
-  min-width: 0;
-}
-
-.mod-card h3,
-.version-row h3,
-.builder-panel h3 {
+.version-row h3 {
   margin: 0;
   color: var(--text);
 }
 
-.mod-card p,
-.version-row p,
-.builder-panel p {
+.version-row p {
   margin: 7px 0 0;
 }
 
-.mod-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 12px;
-  padding-top: 2px;
-}
-
-.mod-actions a {
-  font-size: 14px;
-}
-
-.mod-actions a:hover,
 .version-detail-head a:hover,
 .download-row a:hover,
 .home-statement a:hover,
-.home-notice a:hover,
-.mod-meta a:hover {
+.home-notice a:hover {
   color: var(--accent-hover);
-}
-
-.mod-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: var(--text-soft);
-  font-size: 14px;
-}
-
-.check-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #4e443d;
-}
-
-.check-row input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--accent);
-}
-
-.builder-panel {
-  margin-top: 18px;
-  padding: 20px;
-}
-
-.builder-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin: 0 0 18px;
-}
-
-.builder-controls {
-  display: flex;
-  align-items: end;
-  gap: 10px;
-}
-
-.builder-controls label {
-  display: grid;
-  gap: 6px;
-  color: #5d5148;
-  font-size: 13px;
-}
-
-.builder-controls select {
-  min-width: 220px;
-  height: 38px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  padding: 0 10px;
-  color: var(--text);
-  background: #ffffff;
 }
 
 .version-list {
@@ -668,6 +590,11 @@ main {
     height: 30px;
   }
 
+  .header-actions {
+    display: grid;
+    gap: 8px;
+  }
+
   .nav {
     width: 100%;
     overflow-x: auto;
@@ -685,6 +612,16 @@ main {
     min-width: 72px;
     padding: 8px 10px;
     white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .language-switch {
+    width: 100%;
+  }
+
+  .language-switch button {
+    flex: 1;
+    min-width: 0;
     font-size: 14px;
   }
 
@@ -756,49 +693,6 @@ main {
   .section-head p {
     max-width: none;
     font-size: 14px;
-  }
-
-  .builder-top {
-    display: grid;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  .builder-panel {
-    margin-top: 16px;
-    padding: 18px;
-  }
-
-  .builder-controls {
-    display: grid;
-    gap: 10px;
-  }
-
-  .builder-controls select {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .mod-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .mod-card {
-    gap: 14px;
-    padding: 16px;
-  }
-
-  .mod-card-head {
-    display: grid;
-    gap: 12px;
-  }
-
-  .mod-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 14px;
-    padding-top: 0;
   }
 
   .version-list {
@@ -908,8 +802,6 @@ main {
 
   .hero-copy,
   .home-notice,
-  .builder-panel,
-  .mod-card,
   .version-row,
   .faq-list {
     border-radius: 10px;
