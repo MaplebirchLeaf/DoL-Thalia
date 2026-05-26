@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import type { ThaliaConfig } from './config';
 import { buildHtml } from './html';
 import { syncAndBuildBuiltinMods } from './builtin-mods';
@@ -13,11 +15,14 @@ export async function buildRelease(config: ThaliaConfig): Promise<void> {
   const startedAt = Date.now();
   const versions = await discoverGameVersions(config);
   const presets = await readBuildPresets(config.game.default_mod_list);
+
+  if (!isCI()) await step('清理本地发布产物', () => clean(config));
   await step('同步 SugarCube', () => syncGitRepo(config.upstreams.sugarcube_vrelnir));
   await step('同步 ModLoader', () => syncGitRepo(config.upstreams.modloader));
   await step('构建 Story Format', () => buildStoryFormat(config));
   await step('构建 ModLoader 工具', () => buildModLoaderTools(config));
   await step('构建内置模组包', () => syncAndBuildBuiltinMods(config));
+
   for (const version of versions) {
     const versionConfig = withGameVersion(config, version);
     const apkStatus = apkBuildStatus();
@@ -31,6 +36,7 @@ export async function buildRelease(config: ThaliaConfig): Promise<void> {
       }
     }
   }
+
   logDone(`全部完成，用时 ${formatSeconds(startedAt)}`);
 }
 
@@ -46,4 +52,13 @@ async function step(name: string, action: () => Promise<void>): Promise<void> {
   logStep(name);
   await action();
   logDone(`完成，用时 ${formatSeconds(startedAt)}`);
+}
+
+async function clean(config: ThaliaConfig): Promise<void> {
+  await rm(dirname(resolve(config.paths.output_zip)), { recursive: true, force: true });
+  await rm(resolve(config.paths.output_apk_dir), { recursive: true, force: true });
+}
+
+function isCI(): boolean {
+  return Bun.env.CI === 'true' || Bun.env.GITHUB_ACTIONS === 'true';
 }

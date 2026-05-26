@@ -142,6 +142,7 @@ async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Prom
     <allow-navigation href="*" />
     <preference name="AndroidLaunchMode" value="singleTask" />
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
+    <preference name="loadUrlTimeoutValue" value="0" />
     <preference name="GradlePluginKotlinEnabled" value="true" />
   </widget>
   `;

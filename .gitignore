@@ -17,7 +17,7 @@ input/*
 
 # keep the input directory shape without committing large packages
 !input/
-!input/game/
+input/game/*
 !input/game/.gitkeep
 !input/mods/
 !input/mods/.gitkeep
@@ -32,3 +32,4 @@ input/signing/*
 
 # system files
 .DS_Store
+LOCAL_BUILD.md
