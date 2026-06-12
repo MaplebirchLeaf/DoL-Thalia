@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
-import type { ThaliaConfig } from './config';
+import type { ThaliaConfig } from '../core/config';
 
 const VERSION_PATTERN = /\b\d+\.\d+\.\d+\.\d+\b/;
 

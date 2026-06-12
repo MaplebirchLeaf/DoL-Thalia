@@ -16,13 +16,12 @@ permissions:
 
 jobs:
   release:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
       - name: Resolve release tag
@@ -32,68 +31,18 @@ jobs:
         run: |
           $releaseTag = $env:INPUT_TAG
           if ([string]::IsNullOrWhiteSpace($releaseTag)) { if ($env:GITHUB_REF_TYPE -eq 'tag') { $releaseTag = $env:GITHUB_REF_NAME } }
-          $releaseDate = $releaseTag -replace '^.*-(\d{4})$', '$1'
 
           "THALIA_RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
-          "THALIA_RELEASE_DATE=$releaseDate" >> $env:GITHUB_ENV
 
           Write-Host "Release tag: $releaseTag"
-          Write-Host "Release date: $releaseDate"
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Install Cordova
-        run: npm install -g cordova@13
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Restore APK signing keystore
-        shell: pwsh
-        env:
-          THALIA_KEYSTORE_BASE64: ${{ secrets.THALIA_KEYSTORE_BASE64 }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:THALIA_KEYSTORE_BASE64)) {
-            throw "Missing THALIA_KEYSTORE_BASE64 secret."
-          }
-
-          New-Item -ItemType Directory -Force input/signing | Out-Null
-          [IO.File]::WriteAllBytes(
-            "input/signing/DoL-Thalia.keystore",
-            [Convert]::FromBase64String($env:THALIA_KEYSTORE_BASE64)
-          )
-
-      - name: Build packages
-        run: bun run build:all
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Publish release assets
+      - name: Create empty release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $releaseTag = $env:THALIA_RELEASE_TAG
           if ([string]::IsNullOrWhiteSpace($releaseTag)) { throw "Missing THALIA_RELEASE_TAG." }
-
-          $assets = @()
-          if (Test-Path dist/zip) { $assets += Get-ChildItem dist/zip -File | Where-Object { $_.Extension -ne '.idsig' } }
-          if (Test-Path dist/apk) { $assets += Get-ChildItem dist/apk -File | Where-Object { $_.Extension -ne '.idsig' } }
-          if ($assets.Count -eq 0) { throw "No release assets found in dist/zip or dist/apk." }
 
           git fetch --tags
 
@@ -106,6 +55,6 @@ jobs:
           gh release view $releaseTag *> $null
           if ($LASTEXITCODE -ne 0) {
             gh release create $releaseTag --title $releaseTag --notes "DoL-Thalia $releaseTag"
+          } else {
+            Write-Host "Release already exists: $releaseTag"
           }
-
-          gh release upload $releaseTag @($assets.FullName) --clobber

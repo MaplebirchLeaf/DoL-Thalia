@@ -1,6 +1,11 @@
 [
   {
-    "title": "基础",
+    "title": "Vanilla",
+    "name": "vanilla",
+    "mods": []
+  },
+  {
+    "title": "Base",
     "name": "chs-maplebirch",
     "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch"]
   },

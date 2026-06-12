@@ -4,14 +4,15 @@ import { cp, copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/p
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
 import { minify } from 'terser';
-import type { ThaliaConfig } from './config';
+import type { ThaliaConfig } from '../core/config';
 import { readModLoaderLocalModTargets } from './modloader';
-import { run } from './process';
-import { type ReleasePreset, readDefaultReleasePreset } from './release-presets';
+import { run } from '../core/process';
+import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
 
 const HTML_CACHE_DIR = '.cache/html';
 
 interface EmbeddedIndexDBMod {
+  builtin: true;
   dataParts: string[];
   hash: string;
   name: string;
@@ -24,6 +25,8 @@ interface GameInput {
 
 export interface BuildHtmlOptions {
   embedIndexDBMods?: boolean;
+  minify?: boolean;
+  modloader?: boolean;
   releasePreset?: ReleasePreset;
 }
 
@@ -36,6 +39,8 @@ const RUNTIME_SIDECAR_FILES = ['style.css', 'DolSettingsExport.json'];
 export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions | ReleasePreset = {}): Promise<void> {
   const buildOptions: BuildHtmlOptions = 'mods' in options ? { releasePreset: options } : options;
   const embedIndexDBMods = buildOptions.embedIndexDBMods ?? true;
+  const includeModLoader = buildOptions.modloader ?? true;
+  const minifyHtml = buildOptions.minify ?? true;
   const outputHtml = resolve(config.paths.output_html);
   const outputDir = dirname(outputHtml);
   const storyFormat = resolve(config.paths.story_format);
@@ -48,10 +53,12 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
   const localModListFile = 'modList.thalia.local.json';
   const cleanLocalModListPath = join(modLoaderRoot, localModListFile);
   requireFile(storyFormat);
-  requireFile(beforeSc2);
-  requireFile(insert2html);
   requireFile(sc2ReplaceTool);
-  requireFile(vendorModListPath);
+  if (includeModLoader) {
+    requireFile(beforeSc2);
+    requireFile(insert2html);
+    requireFile(vendorModListPath);
+  }
   const cacheDir = resolve(HTML_CACHE_DIR);
   await rm(cacheDir, { recursive: true, force: true });
   await rm(cleanLocalModListPath, { force: true });
@@ -59,22 +66,27 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
   await mkdir(cacheDir, { recursive: true });
   await mkdir(outputDir, { recursive: true });
   try {
+    // Work in a clean cache so ModLoader's insertion tools can mutate the HTML safely.
     const gameInput = await prepareGameInput(config.paths.source_html, config.game.version, cacheDir);
     const cacheHtml = join(cacheDir, 'index.html');
     await copyFile(gameInput.sourceHtml, cacheHtml);
-    const localModTargets = await readModLoaderLocalModTargets(modLoaderRoot);
-    const preset = buildOptions.releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-    const indexDBModFiles = embedIndexDBMods ? await listIndexDBModFiles(inputModsDir, config.game.version, preset.mods) : [];
-    await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
     await run(['node', sc2ReplaceTool, cacheHtml, storyFormat], { quiet: true });
     const replacedHtml = `${cacheHtml}.sc2replace.html`;
     requireFile(replacedHtml);
-    await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });
-    const generatedModHtml = `${replacedHtml}.mod.html`;
-    requireFile(generatedModHtml);
-    if (embedIndexDBMods) await insertIndexDBMods(generatedModHtml, indexDBModFiles);
-    await minifySugarCubeScript(generatedModHtml);
-    await copyFile(generatedModHtml, outputHtml);
+    let generatedHtml = replacedHtml;
+    if (includeModLoader) {
+      const localModTargets = await readModLoaderLocalModTargets(modLoaderRoot);
+      const preset = buildOptions.releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+      const indexDBModFiles = embedIndexDBMods ? await listIndexDBModFiles(inputModsDir, config.game.version, preset.mods) : [];
+      // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
+      await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
+      await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });
+      generatedHtml = `${replacedHtml}.mod.html`;
+      requireFile(generatedHtml);
+      if (embedIndexDBMods) await insertIndexDBMods(generatedHtml, indexDBModFiles);
+    }
+    if (minifyHtml) await minifySugarCubeScript(generatedHtml);
+    await copyFile(generatedHtml, outputHtml);
     await copyRuntimeAssets({
       sourceHtml: gameInput.sourceHtml,
       imagesDir: gameInput.imagesDir,
@@ -162,9 +174,7 @@ async function extractZip(zipPath: string, outputDir: string): Promise<void> {
   const outputRoot = resolve(outputDir);
   for (const [name, data] of Object.entries(files)) {
     const output = resolve(outputDir, name);
-    if (!output.startsWith(`${outputRoot}${sep}`) && output !== outputRoot) {
-      throw new Error(`Unsafe path in game zip: ${name}`);
-    }
+    if (!output.startsWith(`${outputRoot}${sep}`) && output !== outputRoot) throw new Error(`Unsafe path in game zip: ${name}`);
     if (name.endsWith('/')) {
       await mkdir(output, { recursive: true });
     } else {
@@ -195,18 +205,6 @@ async function findModSourceFiles(versionDir: string, sourceName: string): Promi
   return [...new Set(result)];
 }
 
-async function collectModFiles(dir: string, result: string[]): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await collectModFiles(path, result);
-    } else if (entry.isFile() && isIndexDBModFile(entry.name)) {
-      result.push(path);
-    }
-  }
-}
-
 function isIndexDBModFile(file: string): boolean {
   const lower = file.toLowerCase();
   return INDEXDB_MOD_EXTENSIONS.some(extension => lower.endsWith(extension));
@@ -217,6 +215,8 @@ async function insertIndexDBMods(htmlPath: string, modFiles: string[]): Promise<
   for (const modFile of modFiles) {
     const data = await readFile(modFile);
     items.push({
+      // Runtime-only marker: ModLoader uses it to clean stale bundled IDB mods, but does not store it in IDB.
+      builtin: true,
       dataParts: splitBase64(data.toString('base64')),
       hash: createHash('sha256').update(data).digest('hex'),
       name: modNameFromFileData(data, modFile)

@@ -1,10 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { copyFile, mkdir, rm } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import type { ThaliaConfig } from './config';
-import { logDone, logInfo, logStep } from './log';
-import { run, runShell } from './process';
+import type { ThaliaConfig } from '../core/config';
+import { run, runShell } from '../core/process';
 
 interface BuiltinModTarget {
   target: string;
@@ -69,18 +68,14 @@ async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModT
 async function buildBuiltinModTargets(modLoaderRoot: string, targets: BuiltinModTarget[]): Promise<void> {
   const packModZip = join(modLoaderRoot, 'dist-insertTools', 'packModZip.js');
   if (!existsSync(packModZip)) throw new Error(`Missing packModZip.js: ${packModZip}`);
-  logInfo(`Builtin mods: ${targets.length}`);
-  logInfo(`Build order: ${targets.map(T => T.name).join(' -> ')}`);
   for (const target of targets) {
     await cleanBuiltinModTarget(target);
     await runBuiltinModScripts(target.dir, ['ts:type', 'build:type', 'build:ts']);
   }
-  for (const [index, target] of targets.entries()) {
-    logStep(`Build builtin mod ${index + 1}/${targets.length}: ${target.name}`);
+  for (const target of targets) {
     await runBuiltinModScripts(target.dir, ['build:webpack', 'build']);
     await run(['node', packModZip, 'boot.json'], { cwd: target.dir, quiet: true });
     if (!existsSync(target.output)) throw new Error(`Missing packed mod zip: ${target.output}`);
-    logDone(`Output: ${target.target}`);
   }
 }
 

@@ -85,8 +85,6 @@ function validateConfig(config: ThaliaConfig): void {
 
   for (const [name, source] of Object.entries(config.mod_sources || {})) {
     const hasReleaseSource = typeof source.repository === 'string' && source.repository.trim() !== '';
-    const hasUrlSource = Array.isArray(source.asset_urls) && source.asset_urls.length > 0;
-    if (!hasReleaseSource && !hasUrlSource) throw new Error(`Missing required config field: mod_sources.${name}.repository or mod_sources.${name}.asset_urls`);
     if (hasReleaseSource && (!Array.isArray(source.asset_keywords) || source.asset_keywords.length === 0 || !source.asset_keywords.every(item => typeof item === 'string' && item.trim() !== ''))) {
       throw new Error(`Missing required config field: mod_sources.${name}.asset_keywords`);
     }

@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import type { UpstreamConfig } from './config';
-import { logWarn } from './log';
-import { run } from './process';
+import type { UpstreamConfig } from '../core/config';
+import { logWarn } from '../core/log';
+import { run } from '../core/process';
 
 export async function syncGitRepo(repo: UpstreamConfig): Promise<void> {
   const repoPath = resolve(repo.path);

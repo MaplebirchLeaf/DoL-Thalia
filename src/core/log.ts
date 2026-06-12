@@ -1,9 +1,9 @@
 export function logStep(name: string): void {
-  console.log(`\n• ${name}`);
+  console.log(`\n> ${name}`);
 }
 
 export function logDone(message: string): void {
-  console.log(`  ✓ ${message}`);
+  console.log(`  ok ${message}`);
 }
 
 export function logInfo(message: string): void {

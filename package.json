@@ -5,15 +5,14 @@
   "description": "Custom APK / ZIP packaging toolkit for ModLoader-integrated Degrees of Lewdity builds.",
   "type": "module",
   "scripts": {
-    "build": "bun run build:all",
-    "build:all": "bun run sync:mods && bun run src/tasks/build.ts",
-    "build:html": "bun run src/tasks/html.ts",
-    "build:local": "bun run src/tasks/local.ts",
+    "build:env": "bun run src/commands/prepare.ts sugarcube modloader story-format modloader-tools builtin-mods",
+    "build:all": "bun run src/commands/build-release.ts --skip-prepare --fast",
+    "build:html": "bun run src/commands/build-html.ts --skip-prepare --fast",
+    "build:local": "bun run src/commands/build-local.ts --skip-prepare --fast",
     "check": "tsc --noEmit && oxlint && oxfmt --check",
-    "sync:mods": "bun run src/tasks/sync-mods.ts",
-    "site:publish": "bun run src/tasks/site-play.ts && bun run site:build",
+    "prepare:local": "bun run build:env",
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
-    "site:build": "bun run src/tasks/site.ts && vite build --config site/vite.config.ts",
+    "site:build": "bun run src/commands/site-build-data.ts && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
     "fix": "oxlint --fix && oxfmt"
   },
@@ -21,7 +20,6 @@
     "@iarna/toml": "^2.2.5",
     "cordova": "^13.0.0",
     "fflate": "^0.8.3",
-    "fs-extra": "^11.3.0",
     "vue": "^3.5.34"
   },
   "devDependencies": {

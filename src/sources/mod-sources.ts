@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
-import type { ThaliaConfig } from './config';
-import { logDone, logInfo, logWarn } from './log';
+import type { ThaliaConfig } from '../core/config';
+import { logWarn } from '../core/log';
 
 interface GitHubRelease {
   assets?: GitHubReleaseAsset[];
@@ -22,6 +22,7 @@ interface SelectedAsset extends GitHubReleaseAsset {
 }
 
 const DEFAULT_ASSET_EXTENSIONS = ['.mod.zip', '.modpack'];
+const VERSION_PATTERN = /\d+\.\d+\.\d+\.\d+/;
 
 export async function syncModSources(config: ThaliaConfig, requiredMods?: string[]): Promise<void> {
   const sources = Object.entries(config.mod_sources || {}).filter(([sourceName, source]) => shouldSyncSource(sourceName, source.asset_keywords, requiredMods));
@@ -36,23 +37,18 @@ export async function syncModSources(config: ThaliaConfig, requiredMods?: string
       continue;
     }
 
-    if (!source.repository) throw new Error(`Missing repository for mod source: ${sourceName}`);
-    const keywords = source.asset_keywords || [];
+    const keywords = source.asset_keywords?.length ? source.asset_keywords : [sourceName];
     const extensions = source.asset_extensions || DEFAULT_ASSET_EXTENSIONS;
-    if (await hasAllLocalAssets(config, keywords, extensions)) {
-      logDone(`本地模组源已就绪：${sourceName}`);
-      continue;
-    }
+    if (await hasAllLocalAssets(config, keywords, extensions)) continue;
+
+    if (!source.repository) throw new Error(`Missing local mod asset for source: ${sourceName}`);
 
     const release = await fetchRelease(source.repository, source.release_tag || (await resolveReleaseTag(sourceName, source.repository, config)));
     const assets = keywords.map(keyword => selectAsset(release, keyword, extensions, config.game.version));
     for (const asset of assets) {
       const outputDir = resolve(config.paths.builtin_mods, config.game.version);
       await mkdir(outputDir, { recursive: true });
-      if (await hasLocalAsset(outputDir, asset.keyword, extensions, config.game.version)) {
-        logDone(`已存在：${asset.keyword}`);
-        continue;
-      }
+      if (await hasLocalAsset(outputDir, asset.keyword, extensions, config.game.version)) continue;
       await removeOlderAssetFiles(outputDir, asset.keyword, asset.name, extensions);
       await downloadAsset(asset, outputDir);
     }
@@ -71,13 +67,8 @@ async function syncUrlAssets(config: ThaliaConfig, sourceName: string, urls: str
   for (const url of urls) {
     const fileName = fileNameFromUrl(url);
     const output = join(outputDir, fileName);
-    if (existsSync(output)) {
-      logDone(`已存在：${fileName}`);
-      continue;
-    }
-    logInfo(`下载：${fileName}`);
+    if (existsSync(output)) continue;
     await downloadFile(url, output);
-    logDone(`已保存：${output}`);
   }
 }
 
@@ -110,7 +101,6 @@ async function findChineseLocalizationReleaseTag(repository: string, gameVersion
 
 async function fetchReleases(repository: string): Promise<GitHubRelease[]> {
   const url = `https://api.github.com/repos/${repository}/releases?per_page=50`;
-  logInfo(`查找 GitHub Release：${repository}`);
   const response = await fetch(url, {
     headers: githubHeaders()
   });
@@ -121,7 +111,6 @@ async function fetchReleases(repository: string): Promise<GitHubRelease[]> {
 async function fetchRelease(repository: string, tag: string | undefined): Promise<GitHubRelease> {
   const endpoint = tag ? `releases/tags/${encodeURIComponent(tag)}` : 'releases/latest';
   const url = `https://api.github.com/repos/${repository}/${endpoint}`;
-  logInfo(`读取 GitHub Release：${repository}${tag ? `@${tag}` : '@latest'}`);
   const response = await fetch(url, {
     headers: githubHeaders()
   });
@@ -177,7 +166,7 @@ async function hasLocalAsset(outputDir: string, keyword: string, extensions: str
   const files = await readdir(outputDir);
   return files.some(file => {
     const matchesKeyword = file.includes(keyword);
-    const matchesVersion = file.includes(gameVersion);
+    const matchesVersion = file.includes(gameVersion) || !VERSION_PATTERN.test(file);
     const matchesExtension = extensions.some(extension => file.toLowerCase().endsWith(extension.toLowerCase()));
     return matchesKeyword && matchesVersion && matchesExtension;
   });
@@ -185,14 +174,9 @@ async function hasLocalAsset(outputDir: string, keyword: string, extensions: str
 
 async function downloadAsset(asset: SelectedAsset, outputDir: string): Promise<void> {
   const output = join(outputDir, asset.name);
-  if (await hasSameSize(output, asset.size)) {
-    logDone(`已存在：${asset.name}`);
-    return;
-  }
+  if (await hasSameSize(output, asset.size)) return;
 
-  logInfo(`下载：${asset.name}`);
   await downloadFile(asset.browser_download_url, output);
-  logDone(`已保存：${output}`);
 }
 
 async function downloadFile(url: string, output: string): Promise<void> {

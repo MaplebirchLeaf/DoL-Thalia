@@ -3,11 +3,11 @@ import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { platform } from 'node:process';
 import { unzipSync, zipSync } from 'fflate';
-import type { ThaliaConfig } from './config';
-import { logDone, logInfo } from './log';
-import { run } from './process';
-import { type ReleasePreset, readDefaultReleasePreset } from './release-presets';
-import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from './release-utils';
+import type { ThaliaConfig } from '../core/config';
+import { logDone, logInfo } from '../core/log';
+import { run } from '../core/process';
+import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
+import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from '../release/utils';
 
 const GRADLE_VERSION = '8.14.2';
 const GRADLE_DISTRIBUTION_URL = `https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip`;
@@ -36,7 +36,7 @@ export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: Relea
   const folderName = assetBaseName;
   const files = await readFilesForZip(htmlDir, folderName, `${assetBaseName}.html`);
   await writeFile(outputZip, zipSync(files, { level: 6 }));
-  logDone(`ZIP 输出：${outputZip}`);
+  logDone(`ZIP output: ${outputZip}`);
 }
 
 export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePreset): Promise<void> {
@@ -51,7 +51,6 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   if (!status.canBuild) throw new Error(status.message);
   await mkdir(outputDir, { recursive: true });
   await ensureGradle();
-  logInfo('准备 Cordova 工程');
   const projectCreated = await ensureCordovaProject(config, projectDir);
   await prepareCordovaWww(htmlDir, join(projectDir, 'www'));
   const configChanged = await writeCordovaConfig(config, join(projectDir, 'config.xml'));
@@ -59,15 +58,12 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const platformCreated = await ensureAndroidPlatform(projectDir);
   const pluginsChanged = await ensureCordovaPlugins(projectDir);
   if (projectCreated || configChanged || platformReset || platformCreated || pluginsChanged || !existsSync(join(androidProjectDir, 'app/src/main/assets/www/cordova.js'))) {
-    logInfo('刷新 Cordova 平台');
     await run(cordovaCommand(['prepare', 'android']), { cwd: projectDir, quiet: true });
   }
-  logInfo('同步 Web 资源');
   await syncAndroidWww(projectDir);
   await applyApkIcon(androidProjectDir);
   await applyBlackLaunchTheme(androidProjectDir);
   await suppressAndroidJavaWarnings(androidProjectDir);
-  logInfo('打包 Android Release');
   await run([findGradleBin(), 'cdvBuildRelease', '--quiet'], {
     cwd: androidProjectDir,
     env: androidBuildEnv(),
@@ -77,7 +73,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   requireFile(unsignedApk);
   const outputApk = join(outputDir, `${buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
   await signApk(unsignedApk, outputApk);
-  logDone(`APK 输出：${outputApk}`);
+  logDone(`APK output: ${outputApk}`);
 }
 
 async function readFilesForZip(root: string, folderName: string, htmlFileName: string): Promise<Record<string, Uint8Array>> {
@@ -108,6 +104,7 @@ async function ensureCordovaProject(config: ThaliaConfig, projectDir: string): P
 }
 
 async function prepareCordovaWww(sourceDir: string, wwwDir: string): Promise<void> {
+  // Regenerate Cordova www per build so APK assets match the latest HTML output.
   await rm(wwwDir, { recursive: true, force: true });
   await cp(sourceDir, wwwDir, { recursive: true, force: true });
   await writeFile(join(wwwDir, 'custom_cordova_additions.js'), CORDOVA_ADDITIONS, 'utf8');
@@ -134,6 +131,7 @@ async function injectCordovaScripts(indexHtml: string): Promise<void> {
 }
 
 async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Promise<boolean> {
+  // Keep the shell minimal: the game is bundled locally, with plugins for Android affordances.
   const content = `<?xml version="1.0" encoding="utf-8"?>
   <widget id="${escapeXml(config.apk.id)}" version="${escapeXml(config.game.version)}" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>${escapeXml(config.apk.name)}</name>

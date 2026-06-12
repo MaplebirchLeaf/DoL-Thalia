@@ -7,7 +7,6 @@ dist/
 temp/
 publish/
 site/public/play/
-*.log
 
 # local game/mod/signing inputs
 input/*

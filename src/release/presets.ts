@@ -16,6 +16,10 @@ export async function readReleasePresets(path = RELEASE_PRESETS_SOURCE): Promise
 }
 
 export async function readDefaultReleasePreset(name: string): Promise<ReleasePreset> {
+  return readReleasePreset(name);
+}
+
+export async function readReleasePreset(name: string): Promise<ReleasePreset> {
   const presets = await readReleasePresets();
   const preset = presets.find(item => item.name === name);
   if (!preset) throw new Error(`${RELEASE_PRESETS_SOURCE} has no preset named: ${name}`);
