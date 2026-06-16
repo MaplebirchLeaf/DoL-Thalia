@@ -1,0 +1,35 @@
+.faq-list {
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.faq-item {
+  padding: 22px 26px;
+  background: #ffffff;
+  transition: background-color 140ms ease;
+}
+
+.faq-item:hover {
+  background: #fffaf6;
+}
+
+.faq-item + .faq-item {
+  border-top: 1px solid var(--border);
+}
+
+.faq-item h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.faq-item p {
+  margin: 8px 0 0;
+  color: var(--text-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}

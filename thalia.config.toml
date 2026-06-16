@@ -3,7 +3,7 @@ name = "DoL-Thalia"
 
 [game]
 default_mod_list = "vanilla"
-version = "0.5.10.11"
+version = "0.5.10.12"
 
 [mod_sources.chinese-localization]
 repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
@@ -22,6 +22,12 @@ asset_extensions = [".zip"]
 asset_extensions = [".zip"]
 
 [mod_sources."AUandrogynous"]
+asset_extensions = [".zip"]
+
+[mod_sources."Fem Goose Compilation"]
+asset_extensions = [".zip"]
+
+[mod_sources."Masc Goose Compilation"]
 asset_extensions = [".zip"]
 
 [upstreams.sugarcube_vrelnir]

@@ -1,18 +1,30 @@
 [
   {
-    "title": "基础",
-    "name": "chs-maplebirch"
+    "title": "Vanilla",
+    "name": "vanilla"
   },
   {
-    "title": "AU-F",
-    "name": "chs-maplebirch-au-f"
+    "title": "CHS",
+    "name": "chs"
   },
   {
-    "title": "AU-M",
-    "name": "chs-maplebirch-au-m"
+    "title": "AUfemale",
+    "name": "chs-au-f"
   },
   {
-    "title": "AU-A",
-    "name": "chs-maplebirch-au-a"
+    "title": "AUmale",
+    "name": "chs-au-m"
+  },
+  {
+    "title": "AUndrogynous",
+    "name": "chs-au-a"
+  },
+  {
+    "title": "Fem Goose",
+    "name": "chs-goose-f"
+  },
+  {
+    "title": "Masc Goose",
+    "name": "chs-goose-m"
   }
 ]

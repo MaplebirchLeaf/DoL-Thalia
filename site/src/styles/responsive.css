@@ -1,0 +1,258 @@
+@media (max-width: 900px) {
+  .download-row {
+    grid-template-columns: minmax(0, 1fr) 150px 150px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    min-width: 0;
+  }
+
+  .site-header {
+    height: auto;
+    gap: 12px;
+    padding: 12px 14px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .header-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .nav {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 4px;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav button {
+    flex: 1 0 auto;
+    min-width: 72px;
+    padding: 8px 10px;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .language-switch {
+    width: 100%;
+  }
+
+  .language-switch button {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  main {
+    width: min(100% - 24px, 1360px);
+    padding: 24px 0 40px;
+  }
+
+  .hero-copy {
+    min-height: auto;
+    padding: 28px 20px;
+  }
+
+  .hero-copy h1 {
+    font-size: 32px;
+    line-height: 1.16;
+  }
+
+  .home-statement {
+    margin-top: 18px;
+  }
+
+  .home-statement p {
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .home-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .primary,
+  .secondary {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .home-notice {
+    margin-top: 18px;
+    padding: 18px;
+  }
+
+  .home-notice strong {
+    font-size: 16px;
+  }
+
+  .home-notice p {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .section {
+    padding-top: 0;
+  }
+
+  .section-head {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .section-head h2 {
+    font-size: 30px;
+  }
+
+  .section-head p {
+    max-width: none;
+    font-size: 14px;
+  }
+
+  .version-list {
+    gap: 12px;
+  }
+
+  .version-row {
+    padding: 16px 16px 12px;
+  }
+
+  .version-summary {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .version-summary h3 {
+    font-size: 20px;
+  }
+
+  .version-summary > span {
+    padding-top: 2px;
+    font-size: 14px;
+  }
+
+  .version-detail-shell {
+    margin-top: 10px;
+  }
+
+  .download-row {
+    grid-template-columns: minmax(0, 1fr) 92px 92px;
+    gap: 8px;
+    min-height: 50px;
+    padding: 8px 10px;
+  }
+
+  .download-row.head {
+    min-height: 42px;
+  }
+
+  .download-row.head span {
+    font-size: 13px;
+  }
+
+  .download-row a {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  .preset-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preset-card {
+    grid-template-rows: 150px 1fr;
+  }
+
+  .preset-image {
+    height: 150px;
+  }
+
+  .faq-item {
+    padding: 18px;
+  }
+
+  .faq-item h3 {
+    font-size: 17px;
+  }
+
+  .faq-item p {
+    font-size: 14px;
+  }
+
+  .site-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 22px 12px 30px;
+    font-size: 13px;
+  }
+
+  .back-top {
+    right: 14px;
+    bottom: 14px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-copy h1 {
+    font-size: 28px;
+  }
+
+  .section-head h2 {
+    font-size: 26px;
+  }
+
+  .brand span {
+    font-size: 15px;
+  }
+
+  .nav button {
+    min-width: 64px;
+    padding: 7px 8px;
+  }
+
+  .download-row {
+    grid-template-columns: minmax(0, 1fr) 78px 78px;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .download-row a {
+    min-height: 32px;
+    padding: 0 6px;
+    font-size: 13px;
+  }
+
+  .hero-copy,
+  .home-notice,
+  .version-row,
+  .faq-list {
+    border-radius: 10px;
+  }
+}

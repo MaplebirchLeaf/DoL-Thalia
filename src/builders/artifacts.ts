@@ -29,7 +29,7 @@ export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: Relea
   const outputZipDir = dirname(resolve(config.paths.output_zip));
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
   const releaseDate = buildReleaseDate();
-  requireDirectory(htmlDir);
+  if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   await mkdir(outputZipDir, { recursive: true });
   const assetBaseName = buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate);
   const outputZip = join(outputZipDir, `${assetBaseName}.zip`);
@@ -46,7 +46,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const outputDir = resolve(config.paths.output_apk_dir);
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
   const releaseDate = buildReleaseDate();
-  requireDirectory(htmlDir);
+  if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   const status = apkBuildStatus();
   if (!status.canBuild) throw new Error(status.message);
   await mkdir(outputDir, { recursive: true });
@@ -70,7 +70,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
     quiet: true
   });
   const unsignedApk = join(projectDir, RELEASE_UNSIGNED_APK_PATH);
-  requireFile(unsignedApk);
+  if (!existsSync(unsignedApk)) throw new Error(`Missing file: ${unsignedApk}`);
   const outputApk = join(outputDir, `${buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
   await signApk(unsignedApk, outputApk);
   logDone(`APK output: ${outputApk}`);
@@ -112,7 +112,7 @@ async function prepareCordovaWww(sourceDir: string, wwwDir: string): Promise<voi
 }
 
 async function injectCordovaScripts(indexHtml: string): Promise<void> {
-  requireFile(indexHtml);
+  if (!existsSync(indexHtml)) throw new Error(`Missing file: ${indexHtml}`);
   const html = (await readFile(indexHtml, 'utf8'))
     .replace(/<script\s+src=["']cordova\.js["']\s+type=["']text\/javascript["']><\/script>\s*/gi, '')
     .replace(/<script\s+src=["']custom_cordova_additions\.js["']\s+type=["']text\/javascript["']><\/script>\s*/gi, '');
@@ -459,14 +459,6 @@ function javaMajor(javaHome: string): number {
   } catch {
     return 0;
   }
-}
-
-function requireDirectory(path: string): void {
-  if (!existsSync(path)) throw new Error(`Missing directory: ${path}`);
-}
-
-function requireFile(path: string): void {
-  if (!existsSync(path)) throw new Error(`Missing file: ${path}`);
 }
 
 const CORDOVA_ADDITIONS = `

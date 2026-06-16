@@ -1,0 +1,77 @@
+.hero {
+  display: block;
+}
+
+.hero-copy,
+.home-notice {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.hero-copy {
+  min-height: 500px;
+  padding: clamp(40px, 6vw, 70px);
+}
+
+.hero-copy h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(34px, 4.2vw, 54px);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.home-statement {
+  max-width: 900px;
+  margin-top: 22px;
+}
+
+.home-statement p {
+  margin: 0;
+  color: #4b4038;
+  font-size: 18px;
+  line-height: 1.72;
+}
+
+.home-statement a,
+.home-notice a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.home-statement a:hover,
+.home-notice a:hover {
+  color: var(--accent-hover);
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 42px;
+}
+
+.home-notice {
+  border-left: 4px solid var(--accent);
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: var(--accent-soft-2);
+}
+
+.home-notice strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 17px;
+}
+
+.home-notice p {
+  margin: 6px 0 0;
+  color: #4e443d;
+  font-size: 15px;
+  line-height: 1.72;
+}
