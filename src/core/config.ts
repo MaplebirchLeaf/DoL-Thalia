@@ -15,6 +15,7 @@ export interface ThaliaConfig {
 
   game: {
     default_mod_list: string;
+    release_date?: string;
     version: string;
   };
 

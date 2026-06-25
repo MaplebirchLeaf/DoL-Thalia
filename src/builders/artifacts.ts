@@ -28,7 +28,7 @@ export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: Relea
   const htmlDir = dirname(resolve(config.paths.output_html));
   const outputZipDir = dirname(resolve(config.paths.output_zip));
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-  const releaseDate = buildReleaseDate();
+  const releaseDate = buildReleaseDate(config.game.release_date ?? config.game.version);
   if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   await mkdir(outputZipDir, { recursive: true });
   const assetBaseName = buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate);
@@ -45,7 +45,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const androidProjectDir = join(projectDir, ANDROID_PLATFORM_DIR);
   const outputDir = resolve(config.paths.output_apk_dir);
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-  const releaseDate = buildReleaseDate();
+  const releaseDate = buildReleaseDate(config.game.release_date ?? config.game.version);
   if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   const status = apkBuildStatus();
   if (!status.canBuild) throw new Error(status.message);

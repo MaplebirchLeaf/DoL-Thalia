@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
+import { parseReleaseVersion } from '../release/utils';
 
 const VERSION_PATTERN = /\b\d+\.\d+\.\d+\.\d+\b/;
 
@@ -28,11 +29,13 @@ export async function discoverGameVersions(config: ThaliaConfig): Promise<string
 }
 
 export function withGameVersion(config: ThaliaConfig, version: string): ThaliaConfig {
+  const releaseVersion = parseReleaseVersion(version);
   return {
     ...config,
     game: {
       ...config.game,
-      version
+      release_date: releaseVersion.releaseDate,
+      version: releaseVersion.gameVersion
     }
   };
 }
