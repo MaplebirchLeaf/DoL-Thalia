@@ -178,48 +178,60 @@ function extractMainStartBody(source: string): string | null {
 }
 
 function createStartupWithModLoader(startupBody: string, options: ResolvedBuildStoryFormatOptions): string {
-  const i10nHookSource = options.i10nHook ? `${createI10nHookSource('\t').trimEnd()}\n` : '';
-  const preloaderDone = options.i10nHook ? '.then(() => { mainStart(); initI10n(); })' : '.then(() => mainStart())';
-  const fallbackStart = options.i10nHook ? `\t\tmainStart();\n\t\tinitI10n();` : `\t\tmainStart();`;
-  return `
-\t'use strict';
-\t/* ${MODLOADER_HOOK_MARKER} */
-\tconst mainStart = () => {
-${indent(startupBody, '\t\t')}
-\t};
-${i10nHookSource}\tif (typeof window.modSC2DataManager !== 'undefined') {
-\t\twindow.modSC2DataManager.startInit()
-\t\t\t.then(() => window.jsPreloader.startLoad())
-\t\t\t${preloaderDone}
-\t\t\t.catch(err => {
-\t\t\t\tconsole.error(err);
-\t\t\t});
-\t} else {
-${fallbackStart}
-\t}
-`;
+  const sections = [
+    `'use strict';`,
+    `/* ${MODLOADER_HOOK_MARKER} */`,
+    createMainStartSource(startupBody),
+    options.i10nHook ? createI10nHookSource() : '',
+    createModLoaderStartSource(options.i10nHook)
+  ];
+  return wrapStartupSource(sections);
 }
 
 function createStartupWithoutModLoader(startupBody: string, options: ResolvedBuildStoryFormatOptions): string {
-  const i10nHookSource = options.i10nHook ? `${createI10nHookSource('\t').trimEnd()}\n\tinitI10n();\n` : '';
-  return `
-\t'use strict';
-${indent(startupBody, '\t')}
-${i10nHookSource}`;
+  const sections = [`'use strict';`, startupBody, options.i10nHook ? `${createI10nHookSource()}\ninitI10n();` : ''];
+  return wrapStartupSource(sections);
 }
 
-function createI10nHookSource(prefix: string): string {
+function createMainStartSource(startupBody: string): string {
+  return [`const mainStart = () => {`, indent(startupBody, '\t'), '};'].join('\n');
+}
+
+function createModLoaderStartSource(withI10n: boolean): string {
+  const afterPreload = withI10n ? '.then(() => { mainStart(); initI10n(); })' : '.then(() => mainStart())';
+  const fallback = withI10n ? ['mainStart();', 'initI10n();'] : ['mainStart();'];
+  return [
+    `if (typeof window.modSC2DataManager !== 'undefined') {`,
+    '\twindow.modSC2DataManager.startInit()',
+    '\t\t.then(() => window.jsPreloader.startLoad())',
+    `\t\t${afterPreload}`,
+    '\t\t.catch(err => {',
+    '\t\t\tconsole.error(err);',
+    '\t\t});',
+    '} else {',
+    indent(fallback.join('\n'), '\t'),
+    '}'
+  ].join('\n');
+}
+
+function wrapStartupSource(sections: string[]): string {
+  const source = sections.filter(Boolean).join('\n');
+  return `\n${indent(source, '\t')}\n`;
+}
+
+function createI10nHookSource(): string {
   // The Chinese localization expects these labels before SugarCube finishes UI setup.
-  return `${prefix}var shouldApplyChineseI10n = () => {
-${prefix}\tconst languages = Array.isArray(navigator.languages) && navigator.languages.length > 0 ? navigator.languages : [navigator.language];
-${prefix}\treturn languages.some(language => /^zh(?:-|$)/i.test(language || ''));
-${prefix}};
-${prefix}var initI10n = () => {
-${prefix}\t/* ${I10N_HOOK_MARKER} */
-${prefix}\tif (typeof window.initI10n === 'function') window.initI10n(l10nStrings);
-${prefix}\tif (shouldApplyChineseI10n()) Object.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});
-${prefix}};
-`;
+  return [
+    'var shouldApplyChineseI10n = () => {',
+    '\tconst languages = Array.isArray(navigator.languages) && navigator.languages.length > 0 ? navigator.languages : [navigator.language];',
+    "\treturn languages.some(language => /^zh(?:-|$)/i.test(language || ''));",
+    '};',
+    'var initI10n = () => {',
+    `\t/* ${I10N_HOOK_MARKER} */`,
+    "\tif (typeof window.initI10n === 'function') window.initI10n(l10nStrings);",
+    `\tif (shouldApplyChineseI10n()) Object.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});`,
+    '};'
+  ].join('\n');
 }
 
 function removeExistingI10nHook(source: string): string {

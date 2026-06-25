@@ -464,14 +464,25 @@ function javaMajor(javaHome: string): number {
 const CORDOVA_ADDITIONS = `
 document.addEventListener('deviceready', () => {
   let lastBackEvent = 0;
-  window.Toast = cordova.plugins.rnk.toast;
+  const { rnk, saveDialog } = cordova.plugins;
+  const browserSaveAs = window.saveAs;
+  const Toast = window.Toast = rnk.toast;
+
+  if (saveDialog) window.saveAs = (blob, name) => blob instanceof Blob
+    ? saveDialog.saveFile(blob, name).catch(error => {
+      if (/cancelled/i.test(String(error))) return;
+      console.error('[DoL-Thalia] Save failed:', error);
+      Toast.showToast('Save failed', Toast.LONG);
+    })
+    : browserSaveAs?.(blob, name);
+
   document.addEventListener('backbutton', ev => {
     ev.preventDefault();
-    const dialog = window.SugarCube && window.SugarCube.Dialog;
-    if (dialog && dialog.isOpen()) dialog.close();
-    else if (window.T && window.T.currentOverlay) closeOverlay();
+    const dialog = window.SugarCube?.Dialog;
+    if (dialog?.isOpen()) dialog.close();
+    else if (window.T?.currentOverlay) closeOverlay();
     else if (Date.now() > lastBackEvent + 3500) {
-      window.Toast.showToast('再次点击返回键退出', window.Toast.LONG);
+      Toast.showToast('再次点击返回键退出', Toast.LONG);
       lastBackEvent = Date.now();
     } else navigator.app.exitApp();
   }, false);
