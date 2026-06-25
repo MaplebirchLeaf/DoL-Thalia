@@ -7,11 +7,14 @@ import { run } from '../core/process';
 
 export async function syncGitRepo(repo: UpstreamConfig): Promise<void> {
   const repoPath = resolve(repo.path);
+  let cloned = false;
   if (!existsSync(repoPath)) {
     await mkdir(dirname(repoPath), { recursive: true });
     await run(['git', 'clone', repo.url, repoPath], { quiet: true });
+    cloned = true;
   }
 
+  if (cloned) await run(['git', 'checkout', repo.ref], { cwd: repoPath, quiet: true });
   if (Bun.env.GITHUB_ACTIONS === 'true') return;
 
   try {

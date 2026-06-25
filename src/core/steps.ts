@@ -5,9 +5,10 @@ export async function runStep(name: string, action: () => Promise<void>): Promis
   await action();
 }
 
-export async function runTimedStep(name: string, action: () => Promise<void>): Promise<void> {
+export async function runTimedStep<T>(name: string, action: () => Promise<T>): Promise<T> {
   const startedAt = Date.now();
   logStep(name);
-  await action();
+  const result = await action();
   logDone(`Done in ${formatSeconds(startedAt)}`);
+  return result;
 }
