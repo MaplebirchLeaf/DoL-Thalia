@@ -27,11 +27,11 @@
   {
     "title": "Fem Goose",
     "name": "chs-goose-f",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUandrogynous"]
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "Fem Goose Compilation"]
   },
   {
     "title": "Masc Goose",
     "name": "chs-goose-m",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUandrogynous"]
+    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "Masc Goose Compilation"]
   }
 ]
