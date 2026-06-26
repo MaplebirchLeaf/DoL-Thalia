@@ -35,9 +35,9 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     heroTitle: 'DoL-Thalia 整合包发布站',
     noVersions: '还没有可用版本。',
     onlinePlay: '在线游玩',
-    selectVersion: '选择此版本',
-    showVersions: '进入版本选择',
-    versionChoice: '版本选择',
+    selectVersion: '展开下载列表',
+    showVersions: '查看下载版本',
+    versionChoice: '下载配置',
     navItems: [
       { key: 'home', label: '首页' },
       { key: 'versions', label: '历史版本' },
@@ -72,6 +72,26 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
       {
         question: '整合包无法加载怎么办？',
         answer: '先确认下载文件完整，再尝试使用汉化仓库发布的原版汉化包复现。若只在 DoL-Thalia 出现问题，再向本仓库反馈。'
+      },
+      {
+        question: '为什么 ModLoader 加载 ZIP 时提示 boot.json 无效？',
+        answer: '本仓库分发的是完整游戏本体与内置模组组成的整合包，不是单独的 ModLoader 模组。请解压后直接打开 HTML，或安装 APK；不要把整合包 ZIP 导入 ModLoader。'
+      },
+      {
+        question: 'APK 打开后是英文，左下角也没有 ModLoader？',
+        answer: '通常是 Android System WebView 版本过旧。请更新系统 WebView，或改用兼容版 APK；仍无法使用时，请用现代浏览器打开在线版。'
+      },
+      {
+        question: '美化出现错位、黑边或光头？',
+        answer: '所用美化可能尚未跟进当前游戏版本的资源或模型改动。请改用对应版本的美化，或等待其作者更新。'
+      },
+      {
+        question: '为什么中英文混杂？',
+        answer: '请在 ModLoader 的“旁加载”中卸载额外安装的汉化模组。整合包已经内置与游戏版本对应的汉化，重复加载会互相覆盖。'
+      },
+      {
+        question: '切换版本会共用存档吗？',
+        answer: '通常会。存档按网页来源和 IndexedDB 数据库保存，同一 APK 更新或同一在线站点下的不同版本会共用存档。切换版本前请导出 .save 文件；本地 ZIP 的隔离行为因浏览器而异，不能依赖它。'
       }
     ]
   },
@@ -86,9 +106,9 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     heroTitle: 'DoL-Thalia Release Hub',
     noVersions: 'No release versions are available yet.',
     onlinePlay: 'Play online',
-    selectVersion: 'Select this version',
-    showVersions: 'Choose a version',
-    versionChoice: 'Variant',
+    selectVersion: 'Show downloads',
+    showVersions: 'Browse downloads',
+    versionChoice: 'Package',
     navItems: [
       { key: 'home', label: 'Home' },
       { key: 'versions', label: 'Versions' },
@@ -123,6 +143,28 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
       {
         question: 'What should I do if the package does not load?',
         answer: 'First confirm the download is complete, then try reproducing the issue with the original localized package. If it only happens in DoL-Thalia, report it here.'
+      },
+      {
+        question: 'Why does ModLoader say the ZIP has an invalid boot.json?',
+        answer:
+          'This download is a complete game package with bundled mods, not a standalone ModLoader mod. Extract it and open the HTML file, or install the APK. Do not import the ZIP into ModLoader.'
+      },
+      {
+        question: 'Why is the APK in English with no ModLoader in the corner?',
+        answer: 'Your Android System WebView is likely too old. Update it, try the compatibility APK, or use the online build in a modern browser.'
+      },
+      {
+        question: 'Why do visual mods have offsets, black borders, or a bald character?',
+        answer: 'The visual mod may not yet support changes in the current game version. Use a compatible version or wait for its author to update it.'
+      },
+      {
+        question: 'Why is the game partly Chinese and partly English?',
+        answer: 'Uninstall any side-loaded translation mod in ModLoader. The package already includes the matching translation, and duplicate translation mods overwrite one another.'
+      },
+      {
+        question: 'Do different versions share saves?',
+        answer:
+          'Usually, yes. Saves are keyed by web origin and IndexedDB database, so APK updates and versions on the same online site share them. Export a .save before switching; local ZIP isolation depends on the browser and is not reliable.'
       }
     ]
   }
