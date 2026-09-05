@@ -15,6 +15,9 @@ export interface PrepareLocalBuildOptions {
 
 const DEFAULT_PREPARE_STEPS: PrepareStep[] = ['sugarcube', 'modloader', 'mod-sources', 'story-format', 'modloader-tools', 'builtin-mods'];
 
+export const VANILLA_PREPARE_STEPS: PrepareStep[] = ['sugarcube', 'modloader', 'story-format', 'modloader-tools'];
+export const LOCAL_PREPARE_STEPS: PrepareStep[] = [...VANILLA_PREPARE_STEPS, 'builtin-mods'];
+
 // Prepares the current configured version for local builds without producing release ZIP/APK files.
 export async function prepareLocalBuild(config: ThaliaConfig, options: PrepareLocalBuildOptions = {}): Promise<void> {
   const selectedSteps = new Set<PrepareStep>(options.steps ?? DEFAULT_PREPARE_STEPS);

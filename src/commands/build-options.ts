@@ -1,22 +1,24 @@
 import type { BuildHtmlOptions } from '../builders/html';
-import { parseSimplePrepareOptions, type PrepareLocalBuildOptions, type PrepareStep } from '../builders/prepare';
+import { LOCAL_PREPARE_STEPS, parseSimplePrepareOptions, VANILLA_PREPARE_STEPS, type PrepareLocalBuildOptions, type PrepareStep } from '../builders/prepare';
+import { readOption } from '../core/args';
 
 export interface BuildHtmlCommandOptions {
   html: BuildHtmlOptions;
   prepare: PrepareLocalBuildOptions | 'skip';
   prepareExplicit: boolean;
+  /** Game-lineage variant name (see [games.*] in thalia.config.toml); default standard. */
+  game?: string;
   preset?: string;
   version?: string;
 }
 
-const VANILLA_PREPARE_STEPS: PrepareStep[] = ['sugarcube', 'modloader', 'story-format', 'modloader-tools'];
-const LOCAL_PREPARE_STEPS: PrepareStep[] = ['sugarcube', 'modloader', 'story-format', 'modloader-tools', 'builtin-mods'];
-const HTML_PREPARE_STEPS: PrepareStep[] = LOCAL_PREPARE_STEPS;
+const HTML_PREPARE_STEPS = LOCAL_PREPARE_STEPS;
 
 export function parseBuildHtmlCommandOptions(args: string[], htmlDefaults: BuildHtmlOptions = {}, prepareDefaults?: PrepareStep[]): BuildHtmlCommandOptions {
   let prepare = parseSimplePrepareOptions(args);
   const prepareExplicit = args.some(arg => arg.startsWith('--prepare='));
   const html: BuildHtmlOptions = { ...htmlDefaults };
+  const game = readOption(args, ['--game=']);
   const preset = readOption(args, ['--preset=', '--config=']);
   const version = readOption(args, ['--version=']);
   if (args.includes('--fast')) html.minify = false;
@@ -37,7 +39,7 @@ export function parseBuildHtmlCommandOptions(args: string[], htmlDefaults: Build
     }
   }
 
-  return { html, prepare, prepareExplicit, preset, version };
+  return { html, prepare, prepareExplicit, game, preset, version };
 }
 
 export function parseReleaseHtmlCommandOptions(args: string[]): BuildHtmlCommandOptions {
@@ -46,12 +48,4 @@ export function parseReleaseHtmlCommandOptions(args: string[]): BuildHtmlCommand
 
 export function parseLocalBuildCommandOptions(args: string[]): BuildHtmlCommandOptions {
   return parseBuildHtmlCommandOptions(args, { embedIndexDBMods: false }, LOCAL_PREPARE_STEPS);
-}
-
-function readOption(args: string[], names: string[]): string | undefined {
-  const arg = args.find(value => names.some(name => value.startsWith(name)));
-  if (!arg) return undefined;
-  const name = names.find(item => arg.startsWith(item));
-  const value = name ? arg.slice(name.length).trim() : '';
-  return value || undefined;
 }

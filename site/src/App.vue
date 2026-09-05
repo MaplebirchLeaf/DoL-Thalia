@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import BackTopButton from './components/BackTopButton.vue';
 import HelpPage from './components/HelpPage.vue';
 import HomePage from './components/HomePage.vue';
@@ -27,6 +27,12 @@ function detectInitialLanguage(): Language {
 
 function switchPage(targetPage: PageKey) {
   activePage.value = targetPage;
+}
+
+async function showVersions(edition: 'standard' | 'dolp') {
+  activePage.value = 'versions';
+  await nextTick();
+  document.getElementById(`edition-${edition}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function switchLanguage(targetLanguage: Language) {
@@ -64,9 +70,9 @@ onUnmounted(() => {
     @change-page="switchPage" />
 
   <main>
-    <HomePage v-if="activePage === 'home'" :localized-text="localizedText" :play-url="playUrl" @show-versions="switchPage('versions')" />
+    <HomePage v-if="activePage === 'home'" :localized-text="localizedText" :play-url="playUrl" @show-versions="showVersions" />
     <template v-else-if="activePage === 'versions'">
-      <VersionsPage :localized-text="localizedText" />
+      <VersionsPage :active-language="activeLanguage" :localized-text="localizedText" />
       <PresetComparison :active-language="activeLanguage" />
     </template>
     <HelpPage v-else-if="activePage === 'help'" :localized-text="localizedText" />

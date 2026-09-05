@@ -1,4 +1,5 @@
 import type { Language, ReleasePreset } from './types';
+import { presetTitle } from './presets';
 
 export interface PresetDetail {
   description: string;
@@ -50,7 +51,7 @@ const PRESET_DETAILS: Record<string, PresetDetailSource> = {
 
 export function presetDetail(preset: ReleasePreset, language: Language, baseUrl: string): PresetDetail {
   const detail = PRESET_DETAILS[preset.name];
-  if (!detail) return { description: preset.title };
+  if (!detail) return { description: presetTitle(preset, language) };
   return {
     description: detail.description[language],
     imageUrl: detail.image ? `${baseUrl}${detail.image}` : undefined

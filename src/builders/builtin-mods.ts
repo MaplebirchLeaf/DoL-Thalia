@@ -4,6 +4,7 @@ import { readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { run, runShell } from '../core/process';
+import { modListTargets } from './modloader';
 
 interface BuiltinModTarget {
   target: string;
@@ -45,23 +46,17 @@ async function syncKnownNestedSubmodules(targets: BuiltinModTarget[]): Promise<v
 }
 
 async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModTarget[]> {
-  const modListPath = join(modLoaderRoot, 'modList.json');
-  if (!existsSync(modListPath)) throw new Error(`modList.json not found: ${modListPath}`);
-  const modList = await Bun.file(modListPath).json();
-  if (!Array.isArray(modList) || !modList.every(target => typeof target === 'string')) throw new Error(`Invalid modList.json: ${modListPath}`);
-  const targets = modList
-    .filter(target => target.toLowerCase().endsWith('.mod.zip'))
-    .map(target => {
-      const output = join(modLoaderRoot, target);
-      const dir = dirname(output);
-      return {
-        target,
-        output,
-        dir,
-        name: basename(dir)
-      };
-    });
-  if (targets.length === 0) throw new Error(`No active .mod.zip targets found in ${modListPath}`);
+  const targets = (await modListTargets(modLoaderRoot)).map(target => {
+    const output = join(modLoaderRoot, target);
+    const dir = dirname(output);
+    return {
+      target,
+      output,
+      dir,
+      name: basename(dir)
+    };
+  });
+  if (targets.length === 0) throw new Error(`No active .mod.zip targets found in ${join(modLoaderRoot, 'modList.json')}`);
   return targets;
 }
 

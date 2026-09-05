@@ -1,8 +1,10 @@
 import type { BuildReleaseOptions, ReleaseTarget } from '../builders/release';
+import { readListOption, readOption } from '../core/args';
 
 const RELEASE_TARGETS: ReleaseTarget[] = ['html', 'zip', 'apk'];
 
 export function parseReleaseOptions(args: string[]): BuildReleaseOptions {
+  const game = readOption(args, ['--game=']);
   const versions = readListOption(args, ['--version=', '--versions=']);
   const presets = readListOption(args, ['--preset=', '--presets=', '--config=', '--configs=']);
   const targets = [
@@ -18,26 +20,11 @@ export function parseReleaseOptions(args: string[]): BuildReleaseOptions {
 
   return {
     fast: args.includes('--fast'),
+    game,
     presets,
     skipModSources: args.includes('--skip-mod-sources'),
     skipPrepare: args.includes('--skip-prepare'),
     targets: targets as ReleaseTarget[],
     versions
   };
-}
-
-function readListOption(args: string[], names: string[]): string[] {
-  const values: string[] = [];
-  for (const arg of args) {
-    const name = names.find(item => arg.startsWith(item));
-    if (!name) continue;
-    values.push(
-      ...arg
-        .slice(name.length)
-        .split(',')
-        .map(value => value.trim())
-        .filter(Boolean)
-    );
-  }
-  return [...new Set(values)];
 }

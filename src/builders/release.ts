@@ -17,6 +17,8 @@ export type ReleaseTarget = 'html' | 'zip' | 'apk';
 
 export interface BuildReleaseOptions {
   fast?: boolean;
+  /** Game-lineage variant (see [games.*] in thalia.config.toml); default standard. */
+  game?: string;
   presets?: string[];
   skipModSources?: boolean;
   skipPrepare?: boolean;

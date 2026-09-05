@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { releasePresets } from '../data';
 import { presetDetail } from '../preset-details';
+import { presetTitle } from '../presets';
 import type { Language } from '../types';
 
 const props = defineProps<{
@@ -24,6 +25,7 @@ const displayPresets = computed(() =>
   releasePresets
     .map(preset => ({
       ...preset,
+      title: presetTitle(preset, props.activeLanguage),
       detail: presetDetail(preset, props.activeLanguage, baseUrl)
     }))
     .filter(preset => preset.detail.imageUrl)

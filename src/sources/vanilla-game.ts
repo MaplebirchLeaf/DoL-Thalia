@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
-import { chmod, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
-import { unzipSync } from 'fflate';
+import { chmod, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
+import { extractZipSafe } from '../core/zip';
 import { run } from '../core/process';
 
 const VANILLA_GAME_CACHE = '.cache/site/vanilla-game';
@@ -33,19 +33,7 @@ export async function ensureVanillaGameHtml(config: ThaliaConfig): Promise<strin
 async function extractGameSourceArchive(version: string, outputDir: string): Promise<void> {
   const archive = join(dirname(outputDir), `degrees-of-lewdity-${version}.zip`);
   if (!existsSync(archive)) await downloadFile(releaseArchiveUrl(version), archive);
-
-  const files = unzipSync(await readFile(archive));
-  const outputRoot = resolve(outputDir);
-  for (const [name, data] of Object.entries(files)) {
-    const output = resolve(outputDir, name);
-    if (!output.startsWith(`${outputRoot}${sep}`) && output !== outputRoot) throw new Error(`Unsafe path in vanilla game archive: ${name}`);
-    if (name.endsWith('/')) {
-      await mkdir(output, { recursive: true });
-    } else {
-      await mkdir(dirname(output), { recursive: true });
-      await writeFile(output, data);
-    }
-  }
+  await extractZipSafe(archive, outputDir, 'vanilla game archive');
 }
 
 async function findSourceRoot(sourceDir: string): Promise<string> {

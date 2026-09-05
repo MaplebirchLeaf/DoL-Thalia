@@ -1,1 +1,14 @@
-["0.5.10.12-0626"]
+[
+  {
+    "tag": "0.5.10.12-0626",
+    "presets": [
+      "chs",
+      "chs-au-a",
+      "chs-au-f",
+      "chs-au-m",
+      "chs-goose-f",
+      "chs-goose-m",
+      "vanilla"
+    ]
+  }
+]

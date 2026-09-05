@@ -2,8 +2,8 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execPath } from 'node:process';
 import { dirname, join } from 'node:path';
-import { minify } from 'terser';
 import type { ThaliaConfig } from '../core/config';
+import { minifyJs } from '../core/minify';
 import { run } from '../core/process';
 
 const SC2_SOURCE_ENTRY = 'src/sugarcube.js';
@@ -198,15 +198,22 @@ function createMainStartSource(startupBody: string): string {
 }
 
 function createModLoaderStartSource(withI10n: boolean): string {
-  const afterPreload = withI10n ? '.then(() => { mainStart(); initI10n(); })' : '.then(() => mainStart())';
+  const afterPreload = withI10n ? ".then(() => { thaliaBootLog('preload-done'); mainStart(); initI10n(); })" : ".then(() => { thaliaBootLog('preload-done'); mainStart(); })";
   const fallback = withI10n ? ['mainStart();', 'initI10n();'] : ['mainStart();'];
   return [
     `if (typeof window.modSC2DataManager !== 'undefined') {`,
+    'var thaliaBootPrev = null;',
+    'var thaliaBootLog = function (msg) {',
+    "\ttry { if (typeof performance !== 'undefined' && typeof performance.now === 'function') { console.log('[DoL-Thalia boot] ' + msg + ' +' + (thaliaBootPrev === null ? 0 : (performance.now() - thaliaBootPrev) / 1000).toFixed(2) + 's (cum ' + (performance.now() / 1000).toFixed(2) + 's)'); thaliaBootPrev = performance.now(); } } catch (e) {}",
+    '};',
+    "\tthaliaBootLog('modloader-start');",
     '\twindow.modSC2DataManager.startInit()',
-    '\t\t.then(() => window.jsPreloader.startLoad())',
+    "\t\t.then(() => { thaliaBootLog('modloader-init-done'); return window.jsPreloader.startLoad(); })",
     `\t\t${afterPreload}`,
     '\t\t.catch(err => {',
-    '\t\t\tconsole.error(err);',
+    "\t\t\tconsole.error('ModLoader init failed, starting game without it:', err);",
+    "\t\t\tthaliaBootLog('modloader-failed-fallback');",
+    "\t\t\ttry { mainStart(); if (typeof initI10n === 'function') initI10n(); } catch (fallbackErr) { console.error(fallbackErr); }",
     '\t\t});',
     '} else {',
     indent(fallback.join('\n'), '\t'),
@@ -250,17 +257,7 @@ function removeExistingI10nHook(source: string): string {
 }
 
 async function compressJavaScript(source: string): Promise<string> {
-  const result = await minify(source, {
-    compress: {
-      passes: 2
-    },
-    mangle: true,
-    format: {
-      comments: false
-    }
-  });
-  if (!result.code) throw new Error('format.js 压缩失败。');
-  return result.code;
+  return minifyJs(source);
 }
 
 function indent(source: string, prefix: string): string {

@@ -4,12 +4,16 @@ export interface LocalizedSiteCopy {
   backTop: string;
   collapse: string;
   download: string;
+  editionStandard: string;
+  editionDolp: string;
   expand: string;
   footer: string;
   heroStatement: string;
   heroTitle: string;
   noVersions: string;
   onlinePlay: string;
+  viewDoLDownloads: string;
+  viewDoLPDownloads: string;
   selectVersion: string;
   showVersions: string;
   versionChoice: string;
@@ -29,12 +33,16 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     backTop: '返回顶部',
     collapse: '收起',
     download: 'GitHub 下载',
+    editionStandard: 'DoL',
+    editionDolp: 'DoLP',
     expand: '展开',
     footer: 'Powered by Vue & Vite',
     heroStatement: '本站是 <a href="https://github.com/MaplebirchLeaf/DoL-Thalia">DoL-Thalia</a> 的第三方发布页，并非 DoL 或汉化组官方发布网站。',
     heroTitle: 'DoL-Thalia 整合包发布站',
     noVersions: '还没有可用版本。',
     onlinePlay: '在线游玩',
+    viewDoLDownloads: '查看 DoL 下载',
+    viewDoLPDownloads: '查看 DoLP 下载',
     selectVersion: '展开下载列表',
     showVersions: '查看下载版本',
     versionChoice: '下载配置',
@@ -99,6 +107,8 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     backTop: 'Back to top',
     collapse: 'Collapse',
     download: 'Download',
+    editionStandard: 'DoL',
+    editionDolp: 'DoLP',
     expand: 'Expand',
     footer: 'Powered by Vue & Vite',
     heroStatement:
@@ -106,6 +116,8 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     heroTitle: 'DoL-Thalia Release Hub',
     noVersions: 'No release versions are available yet.',
     onlinePlay: 'Play online',
+    viewDoLDownloads: 'Browse DoL downloads',
+    viewDoLPDownloads: 'Browse DoLP downloads',
     selectVersion: 'Show downloads',
     showVersions: 'Browse downloads',
     versionChoice: 'Package',

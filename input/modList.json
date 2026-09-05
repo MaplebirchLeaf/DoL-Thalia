@@ -1,37 +1,67 @@
 [
   {
-    "title": "Vanilla",
+    "title_en": "Vanilla",
+    "title_cn": "原版",
     "name": "vanilla",
     "mods": []
   },
   {
-    "title": "CHS",
+    "title_en": "CHS Localization",
+    "title_cn": "汉化版",
     "name": "chs",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N"
+    ]
   },
   {
-    "title": "AUfemale",
+    "title_en": "AU Female Beautify",
+    "title_cn": "女性AU美化整合版",
     "name": "chs-au-f",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUfemale"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N",
+      "AUfemale"
+    ]
   },
   {
-    "title": "AUmale",
+    "title_en": "AU Male Beautify",
+    "title_cn": "男性AU美化整合版",
     "name": "chs-au-m",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUmale"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N",
+      "AUmale"
+    ]
   },
   {
-    "title": "AUndrogynous",
+    "title_en": "AU Androgynous Beautify",
+    "title_cn": "中性AU美化整合版",
     "name": "chs-au-a",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "AUandrogynous"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N",
+      "AUandrogynous"
+    ]
   },
   {
-    "title": "Fem Goose",
+    "title_en": "Fem Goose Beautify",
+    "title_cn": "女性Goose美化整合版",
     "name": "chs-goose-f",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "Fem Goose Compilation"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N",
+      "Fem Goose Compilation"
+    ]
   },
   {
-    "title": "Masc Goose",
+    "title_en": "Masc Goose Beautify",
+    "title_cn": "男性Goose美化整合版",
     "name": "chs-goose-m",
-    "mods": ["GameOriginalImagePack", "ModI18N", "maplebirch", "Masc Goose Compilation"]
+    "mods": [
+      "GameOriginalImagePack",
+      "ModI18N",
+      "Masc Goose Compilation"
+    ]
   }
 ]

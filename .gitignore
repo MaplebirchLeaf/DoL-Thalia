@@ -21,6 +21,11 @@ input/game/*
 !input/mods/
 !input/mods/.gitkeep
 input/mods/**/*
+
+# DoLP variant local inputs (large packages, never committed)
+input/game-dolp/
+input/mods-dolp/
+
 !input/signing/
 input/signing/*
 !input/signing/.gitkeep

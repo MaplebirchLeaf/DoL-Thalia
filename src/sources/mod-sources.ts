@@ -41,6 +41,11 @@ export async function syncModSources(config: ThaliaConfig, requiredMods?: string
     const extensions = source.asset_extensions || DEFAULT_ASSET_EXTENSIONS;
     if (await hasAllLocalAssets(config, keywords, extensions)) continue;
 
+    // Variant builds may clear a source's repository (e.g. dolp_repository = "") to skip it.
+    if (source.repository === '') {
+      logWarn(`跳过 ${sourceName}：该变体未配置仓库。`);
+      continue;
+    }
     if (!source.repository) throw new Error(`Missing local mod asset for source: ${sourceName}`);
 
     const release = await fetchRelease(source.repository, source.release_tag || (await resolveReleaseTag(sourceName, source.repository, config)));

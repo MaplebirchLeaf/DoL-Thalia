@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { requireFile } from '../core/fs';
 import { cp, copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, extname, join, resolve, sep } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
-import { minify } from 'terser';
+import { extractZipSafe } from '../core/zip';
+import { minifyJs } from '../core/minify';
 import type { ThaliaConfig } from '../core/config';
 import { readModLoaderLocalModTargets } from './modloader';
 import { run } from '../core/process';
@@ -110,7 +112,7 @@ async function prepareGameInput(sourcePattern: string, gameVersion: string, cach
 
   const extractDir = join(cacheDir, 'game');
   await mkdir(extractDir, { recursive: true });
-  await extractZip(source, extractDir);
+  await extractZipSafe(source, extractDir, 'game zip');
   const sourceHtml = await findSingleHtmlInDir(extractDir);
   return {
     imagesDir: join(dirname(sourceHtml), 'img'),
@@ -165,21 +167,6 @@ async function collectFiles(dir: string, extension: string, result: string[]): P
       await collectFiles(path, extension, result);
     } else if (entry.isFile() && extname(entry.name).toLowerCase() === extension) {
       result.push(path);
-    }
-  }
-}
-
-async function extractZip(zipPath: string, outputDir: string): Promise<void> {
-  const files = unzipSync(await readFile(zipPath));
-  const outputRoot = resolve(outputDir);
-  for (const [name, data] of Object.entries(files)) {
-    const output = resolve(outputDir, name);
-    if (!output.startsWith(`${outputRoot}${sep}`) && output !== outputRoot) throw new Error(`Unsafe path in game zip: ${name}`);
-    if (name.endsWith('/')) {
-      await mkdir(output, { recursive: true });
-    } else {
-      await mkdir(dirname(output), { recursive: true });
-      await writeFile(output, data);
     }
   }
 }
@@ -246,13 +233,8 @@ async function minifySugarCubeScript(htmlPath: string): Promise<void> {
   const closeStart = html.indexOf('</script>', openEnd);
   if (openEnd === -1 || closeStart === -1) throw new Error(`Invalid script-sugarcube block in HTML: ${htmlPath}`);
   const source = html.slice(openEnd + 1, closeStart);
-  const result = await minify(source, {
-    compress: { passes: 2 },
-    mangle: true,
-    format: { comments: false }
-  });
-  if (!result.code) throw new Error('SugarCube script minify failed.');
-  await writeFile(htmlPath, `${html.slice(0, openEnd + 1)}${result.code}${html.slice(closeStart)}`, 'utf8');
+  const code = await minifyJs(source);
+  await writeFile(htmlPath, `${html.slice(0, openEnd + 1)}${code}${html.slice(closeStart)}`, 'utf8');
 }
 
 function modNameFromFileData(data: Uint8Array, modFile: string): string {
@@ -324,8 +306,4 @@ function splitBase64(data: string): string[] {
   const parts: string[] = [];
   for (let i = 0; i < data.length; i += EMBEDDED_MOD_BASE64_PART_SIZE) parts.push(data.slice(i, i + EMBEDDED_MOD_BASE64_PART_SIZE));
   return parts;
-}
-
-function requireFile(path: string): void {
-  if (!existsSync(path)) throw new Error(`Missing file: ${path}`);
 }

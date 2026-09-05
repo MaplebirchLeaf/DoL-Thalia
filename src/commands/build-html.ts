@@ -1,5 +1,5 @@
 import { buildHtml } from '../builders/html';
-import { loadConfig } from '../core/config';
+import { loadConfig, withGameVariant } from '../core/config';
 import { prepareLocalBuild } from '../builders/prepare';
 import { readReleasePreset } from '../release/presets';
 import { withGameVersion } from '../sources/game-input';
@@ -10,7 +10,8 @@ const args = process.argv.slice(2);
 const config = await loadConfig();
 
 const options = parseReleaseHtmlCommandOptions(args);
-const buildConfig = options.version ? withGameVersion(config, options.version) : config;
+const variantConfig = withGameVariant(config, options.game);
+const buildConfig = options.version ? withGameVersion(variantConfig, options.version) : variantConfig;
 const preset = await readReleasePreset(options.preset ?? buildConfig.game.default_mod_list);
 options.html.releasePreset = preset;
 

@@ -17,14 +17,20 @@ export async function discoverGameVersions(config: ThaliaConfig): Promise<string
   const extension = extname(pattern).toLowerCase();
   const dir = resolve(pattern.slice(0, -`*${extension}`.length));
   if (!existsSync(dir)) throw new Error(`Game input directory does not exist: ${dir}`);
+  const files = (await readdir(dir)).filter(file => extname(file).toLowerCase() === extension);
   const versions = new Set<string>();
-  for (const file of await readdir(dir)) {
-    if (extname(file).toLowerCase() !== extension) continue;
+  for (const file of files) {
     const version = extractGameVersion(file);
     if (version) versions.add(version);
   }
   const result = [...versions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  if (result.length === 0) throw new Error(`Game input directory has no versioned ${extension} file: ${dir}`);
+  if (result.length === 0) {
+    // Variant versions may not be four-part (e.g. DoLP 0.775): fall back to the configured
+    // game.version when a matching file exists in the source directory.
+    const fallback = config.game.version?.trim();
+    if (fallback && files.some(file => file.includes(fallback))) return [fallback];
+    throw new Error(`Game input directory has no versioned ${extension} file: ${dir}`);
+  }
   return result;
 }
 

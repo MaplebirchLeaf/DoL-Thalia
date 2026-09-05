@@ -174,3 +174,17 @@
   background: var(--accent-soft-2);
   transform: translateY(-1px);
 }
+
+.edition-group {
+  margin-top: 26px;
+}
+.edition-group + .edition-group {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.edition-heading {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 22px;
+}

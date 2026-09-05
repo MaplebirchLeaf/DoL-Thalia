@@ -3,10 +3,17 @@ name = "DoL-Thalia"
 
 [game]
 default_mod_list = "vanilla"
-version = "0.5.10.12"
+version = "0.5.11.9"
+
+[games.dolp]
+version = "0.775"
+source_html = "input/game-dolp/*.zip"
+default_mod_list = "vanilla"
+mods_dir = "input/mods-dolp"
 
 [mod_sources.chinese-localization]
 repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
+dolp_repository = ""
 asset_keywords = ["GameOriginalImagePack", "ModI18N"]
 asset_extensions = [".mod.zip"]
 

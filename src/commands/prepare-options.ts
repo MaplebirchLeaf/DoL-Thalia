@@ -1,4 +1,4 @@
-import type { PrepareLocalBuildOptions, PrepareStep } from '../builders/prepare';
+import { VANILLA_PREPARE_STEPS, type PrepareLocalBuildOptions, type PrepareStep } from '../builders/prepare';
 import type { BuildStoryFormatOptions } from '../builders/story-format';
 
 const STEP_ALIASES: Record<string, PrepareStep> = {
@@ -19,8 +19,6 @@ const STEP_ALIASES: Record<string, PrepareStep> = {
   'builtin-mods': 'builtin-mods',
   'build-builtin-mods': 'builtin-mods'
 };
-
-const VANILLA_PREPARE_STEPS: PrepareStep[] = ['sugarcube', 'modloader', 'story-format', 'modloader-tools'];
 
 export function parsePrepareOptions(args: string[]): PrepareLocalBuildOptions {
   const steps: PrepareStep[] = [];

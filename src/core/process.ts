@@ -9,34 +9,18 @@ export interface RunOptions {
 }
 
 export async function run(command: string[], options: RunOptions = {}): Promise<void> {
-  const text = command.join(' ');
-  if (options.printCommand) console.log(`  $ ${text}`);
-
-  const child = Bun.spawn(command, {
-    cwd: options.cwd,
-    env: {
-      ...Bun.env,
-      ...options.env
-    },
-    stdin: 'inherit',
-    stdout: options.quiet ? 'pipe' : 'inherit',
-    stderr: options.quiet ? 'pipe' : 'inherit'
-  });
-
-  const output = options.quiet ? await readOutput(child) : '';
-  const code = await child.exited;
-  if (code !== 0) {
-    if (options.printOutputOnError !== false && output.trim()) console.error(output.trimEnd());
-    throw new Error(`命令失败（退出码 ${code}）：${text}`);
-  }
+  await spawnAndWait(command, command.join(' '), options);
 }
 
 export async function runShell(command: string, options: RunOptions = {}): Promise<void> {
-  if (options.printCommand) console.log(`  $ ${command}`);
-
   const shellCommand = platform === 'win32' ? ['cmd', '/d', '/s', '/c', command] : ['sh', '-lc', command];
+  await spawnAndWait(shellCommand, command, options);
+}
 
-  const child = Bun.spawn(shellCommand, {
+async function spawnAndWait(argv: string[], label: string, options: RunOptions): Promise<void> {
+  if (options.printCommand) console.log(`  $ ${label}`);
+
+  const child = Bun.spawn(argv, {
     cwd: options.cwd,
     env: {
       ...Bun.env,
@@ -51,7 +35,7 @@ export async function runShell(command: string, options: RunOptions = {}): Promi
   const code = await child.exited;
   if (code !== 0) {
     if (options.printOutputOnError !== false && output.trim()) console.error(output.trimEnd());
-    throw new Error(`命令失败（退出码 ${code}）：${command}`);
+    throw new Error(`命令失败（退出码 ${code}）：${label}`);
   }
 }
 

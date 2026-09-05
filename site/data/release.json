@@ -1,30 +1,37 @@
 [
   {
-    "title": "Vanilla",
-    "name": "vanilla"
+    "name": "vanilla",
+    "title_en": "Vanilla",
+    "title_cn": "原版"
   },
   {
-    "title": "CHS",
-    "name": "chs"
+    "name": "chs",
+    "title_en": "CHS Localization",
+    "title_cn": "汉化版"
   },
   {
-    "title": "AUfemale",
-    "name": "chs-au-f"
+    "name": "chs-au-f",
+    "title_en": "AU Female Beautify",
+    "title_cn": "AU女性美化整合版"
   },
   {
-    "title": "AUmale",
-    "name": "chs-au-m"
+    "name": "chs-au-m",
+    "title_en": "AU Male Beautify",
+    "title_cn": "AU男性美化整合版"
   },
   {
-    "title": "AUndrogynous",
-    "name": "chs-au-a"
+    "name": "chs-au-a",
+    "title_en": "AU Androgynous Beautify",
+    "title_cn": "AU中性美化整合版"
   },
   {
-    "title": "Fem Goose",
-    "name": "chs-goose-f"
+    "name": "chs-goose-f",
+    "title_en": "Fem Goose Beautify",
+    "title_cn": "女性Goose美化整合版"
   },
   {
-    "title": "Masc Goose",
-    "name": "chs-goose-m"
+    "name": "chs-goose-m",
+    "title_en": "Masc Goose Beautify",
+    "title_cn": "男性Goose美化整合版"
   }
 ]

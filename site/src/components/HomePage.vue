@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 defineEmits<{
-  showVersions: [];
+  showVersions: [edition: 'standard' | 'dolp'];
 }>();
 </script>
 
@@ -20,7 +20,8 @@ defineEmits<{
       </div>
 
       <div class="home-actions">
-        <button class="primary" type="button" @click="$emit('showVersions')">{{ localizedText.showVersions }}</button>
+        <button class="primary" type="button" @click="$emit('showVersions', 'standard')">{{ localizedText.viewDoLDownloads }}</button>
+        <button class="primary" type="button" @click="$emit('showVersions', 'dolp')">{{ localizedText.viewDoLPDownloads }}</button>
         <a class="secondary" :href="playUrl">{{ localizedText.onlinePlay }}</a>
       </div>
     </div>
