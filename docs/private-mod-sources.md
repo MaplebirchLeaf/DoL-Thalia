@@ -42,9 +42,10 @@ asset_extensions = [".zip"]
 - name: Build release assets
   run: bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
   env:
-    GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
 ```
 
+仓库工作流已经使用这一映射。配置了 `PRIVATE_MODS_TOKEN` 时读取授权的私有资源仓库；没有配置时回退到 `${{ github.token }}`，公开模组源仍可正常构建。
 不要把令牌写进 `thalia.config.toml`、脚本、Release 文件名或日志。不要在来自 fork 的不受信任工作流中暴露这个 Secret。
 
 ## 构建前验证

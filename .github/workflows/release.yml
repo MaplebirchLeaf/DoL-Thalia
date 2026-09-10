@@ -87,7 +87,7 @@ jobs:
       - name: Build release assets
         run: bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
 
       - name: Publish release assets
         shell: bash
