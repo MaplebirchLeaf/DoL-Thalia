@@ -1,5 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { platform } from 'node:process';
 import { unzipSync, zipSync } from 'fflate';
@@ -9,8 +10,6 @@ import { run } from '../core/process';
 import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
 import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from '../release/utils';
 
-const GRADLE_VERSION = '8.14.2';
-const GRADLE_DISTRIBUTION_URL = `https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip`;
 const ANDROID_PLATFORM_DIR = 'platforms/android';
 const RELEASE_UNSIGNED_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/release/app-release-unsigned.apk`;
 const APK_ICON_SOURCE = 'input/icon.png';
@@ -47,32 +46,31 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
   const releaseDate = buildReleaseDate(config.game.release_date ?? config.game.version);
   if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
-  const status = apkBuildStatus();
+  const status = apkBuildStatus(config);
   if (!status.canBuild) throw new Error(status.message);
   await mkdir(outputDir, { recursive: true });
-  await ensureGradle();
+  await ensureGradle(config);
   const projectCreated = await ensureCordovaProject(config, projectDir);
   await prepareCordovaWww(htmlDir, join(projectDir, 'www'));
   const configChanged = await writeCordovaConfig(config, join(projectDir, 'config.xml'));
-  const platformReset = await resetAndroidPlatformIfPackageChanged(config, androidProjectDir);
-  const platformCreated = await ensureAndroidPlatform(projectDir);
+  const platformReset = await resetAndroidPlatformIfPackageChanged(config, projectDir);
+  const platformCreated = await ensureAndroidPlatform(config, projectDir);
   const pluginsChanged = await ensureCordovaPlugins(projectDir);
   if (projectCreated || configChanged || platformReset || platformCreated || pluginsChanged || !existsSync(join(androidProjectDir, 'app/src/main/assets/www/cordova.js'))) {
-    await run(cordovaCommand(['prepare', 'android']), { cwd: projectDir, quiet: true });
+    await run(createCordovaCommand(['prepare', 'android']), { cwd: projectDir, quiet: true });
   }
   await syncAndroidWww(projectDir);
   await applyApkIcon(androidProjectDir);
   await applyBlackLaunchTheme(androidProjectDir);
-  await suppressAndroidJavaWarnings(androidProjectDir);
-  await run([findGradleBin(), 'cdvBuildRelease', '--quiet'], {
-    cwd: androidProjectDir,
-    env: androidBuildEnv(),
+  await run(createCordovaCommand(['build', 'android', '--release', '--', '--packageType=apk']), {
+    cwd: projectDir,
+    env: createAndroidBuildEnvironment(config),
     quiet: true
   });
   const unsignedApk = join(projectDir, RELEASE_UNSIGNED_APK_PATH);
   if (!existsSync(unsignedApk)) throw new Error(`Missing file: ${unsignedApk}`);
   const outputApk = join(outputDir, `${buildReleaseAssetName(config.project.name, config.game.version, preset.name, releaseDate)}.apk`);
-  await signApk(unsignedApk, outputApk);
+  await signApk(config, unsignedApk, outputApk);
   logDone(`APK output: ${outputApk}`);
 }
 
@@ -99,7 +97,7 @@ async function readFilesForZip(root: string, folderName: string, htmlFileName: s
 async function ensureCordovaProject(config: ThaliaConfig, projectDir: string): Promise<boolean> {
   if (existsSync(join(projectDir, 'config.xml'))) return false;
   await mkdir(dirname(projectDir), { recursive: true });
-  await run(cordovaCommand(['create', projectDir, config.apk.id, config.apk.name]), { quiet: true });
+  await run(createCordovaCommand(['create', projectDir, config.apk.id, config.apk.name]), { quiet: true });
   return true;
 }
 
@@ -150,18 +148,25 @@ async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Prom
   return true;
 }
 
-async function ensureAndroidPlatform(projectDir: string): Promise<boolean> {
-  if (existsSync(join(projectDir, ANDROID_PLATFORM_DIR))) return false;
-  await run(cordovaCommand(['platform', 'add', 'android']), { cwd: projectDir, quiet: true });
+async function ensureAndroidPlatform(config: ThaliaConfig, projectDir: string): Promise<boolean> {
+  const version = config.apk.toolchain.cordova_android;
+  const packageJson = join(projectDir, 'node_modules/cordova-android/package.json');
+  if (existsSync(packageJson)) {
+    const installed = JSON.parse(await readFile(packageJson, 'utf8')) as { version?: string };
+    if (installed.version === version && existsSync(join(projectDir, ANDROID_PLATFORM_DIR))) return false;
+    await run(createCordovaCommand(['platform', 'remove', 'android']), { cwd: projectDir, quiet: true });
+  }
+  await run(createCordovaCommand(['platform', 'add', `android@${version}`]), { cwd: projectDir, quiet: true });
   return true;
 }
 
-async function resetAndroidPlatformIfPackageChanged(config: ThaliaConfig, androidProjectDir: string): Promise<boolean> {
+async function resetAndroidPlatformIfPackageChanged(config: ThaliaConfig, projectDir: string): Promise<boolean> {
+  const androidProjectDir = join(projectDir, ANDROID_PLATFORM_DIR);
   const gradleConfigPath = join(androidProjectDir, 'cdv-gradle-config.json');
   if (!existsSync(gradleConfigPath)) return false;
   const gradleConfig = JSON.parse(await readFile(gradleConfigPath, 'utf8')) as { PACKAGE_NAMESPACE?: string };
   if (gradleConfig.PACKAGE_NAMESPACE === config.apk.id) return false;
-  await rm(androidProjectDir, { recursive: true, force: true });
+  await run(createCordovaCommand(['platform', 'remove', 'android']), { cwd: projectDir, quiet: true });
   return true;
 }
 
@@ -170,7 +175,7 @@ async function ensureCordovaPlugins(projectDir: string): Promise<boolean> {
   for (const plugin of CORDOVA_PLUGINS) {
     const pluginId = plugin.split('@')[0];
     if (existsSync(join(projectDir, 'plugins', pluginId))) continue;
-    await run(cordovaCommand(['plugin', 'add', plugin]), { cwd: projectDir, quiet: true });
+    await run(createCordovaCommand(['plugin', 'add', plugin]), { cwd: projectDir, quiet: true });
     changed = true;
   }
   return changed;
@@ -183,27 +188,14 @@ async function syncAndroidWww(projectDir: string): Promise<void> {
   await cp(source, target, { recursive: true, force: true });
 }
 
-async function suppressAndroidJavaWarnings(androidProjectDir: string): Promise<void> {
-  await writeFile(
-    join(androidProjectDir, 'app/build-extras.gradle'),
-    `tasks.withType(JavaCompile).configureEach {
-      options.compilerArgs += ['-Xlint:none', '-nowarn']
-      options.deprecation = false
-      options.warnings = false
-    }
-    `,
-    'utf8'
-  );
-}
-
-async function signApk(unsignedApk: string, outputApk: string): Promise<void> {
+async function signApk(config: ThaliaConfig, unsignedApk: string, outputApk: string): Promise<void> {
   const keystore = resolve(APK_KEYSTORE);
   await ensureApkKeystore(keystore);
   const alignedApk = join(dirname(outputApk), `${safeFileName('DoL-Thalia')}.aligned.apk`);
-  await run([findBuildTool('zipalign'), '-f', '-p', '4', unsignedApk, alignedApk], { quiet: true });
+  await run([resolveAndroidBuildTool(config, 'zipalign'), '-f', '-p', '4', unsignedApk, alignedApk], { quiet: true });
   await run(
     [
-      findBuildTool('apksigner'),
+      resolveAndroidBuildTool(config, 'apksigner'),
       'sign',
       '--ks',
       keystore,
@@ -273,21 +265,30 @@ async function applyApkIcon(androidProjectDir: string): Promise<void> {
 
 async function applyBlackLaunchTheme(androidProjectDir: string): Promise<void> {
   const resDir = join(androidProjectDir, 'app/src/main/res');
-  const colors = `<resources>
+  await Promise.all([
+    rm(join(resDir, 'values/cdv_colors.xml'), { force: true }),
+    rm(join(resDir, 'values/cdv_themes.xml'), { force: true }),
+    rm(join(resDir, 'values-night/cdv_colors.xml'), { force: true }),
+    rm(join(resDir, 'values-v34/cdv_colors.xml'), { force: true }),
+    rm(join(resDir, 'values-night-v34/cdv_colors.xml'), { force: true })
+  ]);
+
+  const colors = `<resources xmlns:tools="http://schemas.android.com/tools">
     <color name="cdv_background_color">#000000</color>
     <color name="cdv_splashscreen_background">#000000</color>
   </resources>
   `;
   await Promise.all([
-    ...['values', 'values-night', 'values-v34', 'values-night-v34'].map(dir => writeXml(join(resDir, dir, 'cdv_colors.xml'), colors)),
+    writeXml(join(resDir, 'values/colors.xml'), colors),
     writeXml(
-      join(resDir, 'values/cdv_themes.xml'),
-      `<resources>
+      join(resDir, 'values/themes.xml'),
+      `<resources xmlns:tools="http://schemas.android.com/tools">
         <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
           <item name="windowSplashScreenBackground">@color/cdv_splashscreen_background</item>
           <item name="windowSplashScreenAnimatedIcon">@drawable/empty_splash_icon</item>
           <item name="windowSplashScreenAnimationDuration">0</item>
           <item name="postSplashScreenTheme">@style/Theme.Cordova.App.DayNight</item>
+          <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
         </style>
         <style name="Theme.Cordova.App.DayNight" parent="Theme.AppCompat.DayNight.NoActionBar">
           <item name="android:windowBackground">@color/cdv_background_color</item>
@@ -322,7 +323,7 @@ async function writePng(source: string, target: string, size: number): Promise<v
   await run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve('src/tools/resize-png.ps1'), source, target, String(size)], { quiet: true });
 }
 
-function cordovaCommand(args: string[]): string[] {
+function createCordovaCommand(args: string[]): string[] {
   const localCli = resolve('node_modules/cordova/bin/cordova');
   if (existsSync(localCli)) return ['node', localCli, ...args];
   return [findCordovaBin(), ...args];
@@ -334,25 +335,57 @@ function findCordovaBin(): string {
   return existsSync(local) ? local : bin;
 }
 
-function findGradleBin(): string {
-  const bin = platform === 'win32' ? 'gradle.bat' : 'gradle';
-  const local = join(gradleHome(), 'bin', bin);
-  return existsSync(local) ? local : bin;
-}
-
-function findBuildTool(tool: 'apksigner' | 'zipalign'): string {
+function resolveAndroidBuildTool(config: ThaliaConfig, tool: 'apksigner' | 'zipalign'): string {
   const suffix = platform === 'win32' ? (tool === 'apksigner' ? '.bat' : '.exe') : '';
   const name = `${tool}${suffix}`;
   const buildToolsDir = join(findAndroidSdk(), 'build-tools');
-  const versions = existsSync(buildToolsDir) ? readdirSync(buildToolsDir).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
-  for (const version of versions.reverse()) {
-    const candidate = join(buildToolsDir, version, name);
-    if (existsSync(candidate)) return candidate;
-  }
-  return name;
+  return join(buildToolsDir, config.apk.toolchain.build_tools, name);
 }
 
-export function apkBuildStatus(): ApkBuildStatus {
+function gradleHome(config: ThaliaConfig): string {
+  return resolve('.cache/android-toolchain', `gradle-${config.apk.toolchain.gradle}`);
+}
+
+function findGradleExecutable(config: ThaliaConfig): string {
+  const executable = platform === 'win32' ? 'gradle.bat' : 'gradle';
+  return join(gradleHome(config), 'bin', executable);
+}
+
+async function ensureGradle(config: ThaliaConfig): Promise<void> {
+  const executable = findGradleExecutable(config);
+  if (existsSync(executable)) return;
+
+  const version = config.apk.toolchain.gradle;
+  const archive = resolve('.cache/android-toolchain/downloads', `gradle-${version}-bin.zip`);
+  const downloadUrl = `https://services.gradle.org/distributions/gradle-${version}-bin.zip`;
+  logInfo(`Downloading Gradle ${version}`);
+  await downloadFile(downloadUrl, archive);
+
+  const files = unzipSync(await readFile(archive));
+  for (const [name, data] of Object.entries(files)) {
+    if (name.endsWith('/')) continue;
+    const output = resolve('.cache/android-toolchain', name);
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(output, data);
+  }
+  if (platform !== 'win32') await chmod(executable, 0o755);
+}
+
+async function downloadFile(url: string, output: string): Promise<void> {
+  await mkdir(dirname(output), { recursive: true });
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
+  await writeFile(output, new Uint8Array(await response.arrayBuffer()));
+}
+
+export function apkBuildStatus(config: ThaliaConfig): ApkBuildStatus {
+  const javaMajor = detectJavaMajorVersion();
+  if (javaMajor !== config.apk.toolchain.java) {
+    return {
+      canBuild: false,
+      message: `JDK ${config.apk.toolchain.java} is required, found ${javaMajor ?? 'none'}. Set JAVA_HOME to a JDK ${config.apk.toolchain.java} installation.`
+    };
+  }
   const sdkPath = findAndroidSdk();
   if (!existsSync(sdkPath)) {
     return {
@@ -360,57 +393,24 @@ export function apkBuildStatus(): ApkBuildStatus {
       message: `Android SDK not found: ${sdkPath}. Set ANDROID_HOME or ANDROID_SDK_ROOT.`
     };
   }
+  const platformPackage = `platforms;android-${config.apk.toolchain.sdk}`;
+  if (!existsSync(join(sdkPath, 'platforms', `android-${config.apk.toolchain.sdk}`))) return missingSdkPackage(platformPackage);
+  const buildToolsPackage = `build-tools;${config.apk.toolchain.build_tools}`;
+  if (!existsSync(join(sdkPath, 'build-tools', config.apk.toolchain.build_tools))) return missingSdkPackage(buildToolsPackage);
   return { canBuild: true };
 }
 
-async function ensureGradle(): Promise<void> {
-  if (existsSync(findGradleBin())) return;
-  const toolsDir = resolve('.cache/tools');
-  const zipPath = join(toolsDir, `gradle-${GRADLE_VERSION}-bin.zip`);
-  await mkdir(toolsDir, { recursive: true });
-  logInfo(`Downloading Gradle ${GRADLE_VERSION}`);
-  await downloadGradle(zipPath);
-  const files = unzipSync(await readFile(zipPath));
-  for (const [name, data] of Object.entries(files)) {
-    if (name.endsWith('/')) continue;
-    const output = join(toolsDir, name);
-    await mkdir(dirname(output), { recursive: true });
-    await writeFile(output, data);
-  }
-  await rm(zipPath, { force: true });
+function missingSdkPackage(packageName: string): ApkBuildStatus {
+  return {
+    canBuild: false,
+    message: `Android SDK package not found: ${packageName}. Install it with sdkmanager "${packageName}".`
+  };
 }
 
-async function downloadGradle(output: string): Promise<void> {
-  try {
-    const response = await fetch(GRADLE_DISTRIBUTION_URL);
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-    await writeFile(output, new Uint8Array(await response.arrayBuffer()));
-  } catch (error) {
-    await rm(output, { force: true });
-    if (platform === 'win32') {
-      await run(
-        [
-          'powershell',
-          '-NoProfile',
-          '-ExecutionPolicy',
-          'Bypass',
-          '-Command',
-          "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri $args[0] -OutFile $args[1]",
-          GRADLE_DISTRIBUTION_URL,
-          output
-        ],
-        { quiet: true }
-      );
-      return;
-    }
-    await run(['curl', '-L', GRADLE_DISTRIBUTION_URL, '-o', output], { quiet: true });
-  }
-}
-
-function androidBuildEnv(): Record<string, string | undefined> {
+function createAndroidBuildEnvironment(config?: ThaliaConfig): Record<string, string | undefined> {
   const sdkPath = findAndroidSdk();
   const javaHome = findAndroidBuildJavaHome();
-  const pathAdditions = [join(sdkPath, 'cmdline-tools/latest/bin'), join(sdkPath, 'platform-tools'), join(sdkPath, 'emulator'), join(gradleHome(), 'bin'), join(javaHome ?? '', 'bin')].filter(path =>
+  const pathAdditions = [join(sdkPath, 'cmdline-tools/latest/bin'), join(sdkPath, 'platform-tools'), ...(config ? [join(gradleHome(config), 'bin')] : []), join(javaHome ?? '', 'bin')].filter(path =>
     existsSync(path)
   );
 
@@ -418,22 +418,32 @@ function androidBuildEnv(): Record<string, string | undefined> {
     ANDROID_HOME: sdkPath,
     ANDROID_SDK_ROOT: sdkPath,
     JAVA_HOME: javaHome,
-    PATH: buildPath(pathAdditions),
-    Path: buildPath(pathAdditions)
+    PATH: prependPathEntries(pathAdditions),
+    Path: prependPathEntries(pathAdditions)
   };
 }
 
-function buildPath(additions: string[]): string {
+function detectJavaMajorVersion(): number | undefined {
+  const javaHome = findAndroidBuildJavaHome();
+  const java = javaHome ? join(javaHome, 'bin', platform === 'win32' ? 'java.exe' : 'java') : 'java';
+  const result = Bun.spawnSync([java, '-version'], { stderr: 'pipe', stdout: 'pipe' });
+  if (result.exitCode !== 0) return undefined;
+  const output = `${result.stdout.toString()}${result.stderr.toString()}`;
+  const version = output.match(/version "(?:1\.)?(\d+)/)?.[1];
+  return version ? Number(version) : undefined;
+}
+
+function prependPathEntries(additions: string[]): string {
   const delimiter = platform === 'win32' ? ';' : ':';
   return `${additions.join(delimiter)}${delimiter}${Bun.env.PATH ?? Bun.env.Path ?? ''}`;
 }
 
 function findAndroidSdk(): string {
-  return Bun.env.ANDROID_HOME || Bun.env.ANDROID_SDK_ROOT || join(Bun.env.LOCALAPPDATA ?? '', 'Android/Sdk');
-}
-
-function gradleHome(): string {
-  return resolve('.cache/tools', `gradle-${GRADLE_VERSION}`);
+  if (Bun.env.ANDROID_HOME) return Bun.env.ANDROID_HOME;
+  if (Bun.env.ANDROID_SDK_ROOT) return Bun.env.ANDROID_SDK_ROOT;
+  if (platform === 'win32') return join(Bun.env.LOCALAPPDATA ?? homedir(), 'Android/Sdk');
+  if (platform === 'darwin') return join(homedir(), 'Library/Android/sdk');
+  return join(homedir(), 'Android/Sdk');
 }
 
 function findKeytoolBin(): string {
@@ -444,21 +454,9 @@ function findKeytoolBin(): string {
 }
 
 function findAndroidBuildJavaHome(): string | undefined {
-  const javaHome = Bun.env.JAVA_HOME;
-  if (javaHome && javaMajor(javaHome) < 25) return javaHome;
-
+  if (Bun.env.JAVA_HOME) return Bun.env.JAVA_HOME;
   const androidStudioJbr = 'C:\\Program Files\\Android\\Android Studio\\jbr';
-  return existsSync(androidStudioJbr) ? androidStudioJbr : javaHome;
-}
-
-function javaMajor(javaHome: string): number {
-  try {
-    const release = readFileSync(join(javaHome, 'release'), 'utf8');
-    const version = release.match(/JAVA_VERSION="(\d+)/)?.[1];
-    return version ? Number(version) : 0;
-  } catch {
-    return 0;
-  }
+  return existsSync(androidStudioJbr) ? androidStudioJbr : undefined;
 }
 
 const CORDOVA_ADDITIONS = `

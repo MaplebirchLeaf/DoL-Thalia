@@ -41,33 +41,19 @@ jobs:
         run: |
           $releaseTag = $env:INPUT_TAG
           if ([string]::IsNullOrWhiteSpace($releaseTag)) { if ($env:GITHUB_REF_TYPE -eq 'tag') { $releaseTag = $env:GITHUB_REF_NAME } }
+          if ([string]::IsNullOrWhiteSpace($releaseTag)) { throw "Missing release tag." }
+
+          $releaseName = $releaseTag -replace '^v', ''
+          $game = if ($releaseName.StartsWith('dolp-')) { 'dolp' } else { 'standard' }
+          $gameVersion = ($releaseName -replace '^dolp-', '') -replace '-\d{4}$', ''
+          $releaseDate = if ($releaseName -match '-(\d{4})$') { $Matches[1] } else { '' }
 
           "THALIA_RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
+          "THALIA_GAME=$game" >> $env:GITHUB_ENV
+          "THALIA_GAME_VERSION=$gameVersion" >> $env:GITHUB_ENV
+          "THALIA_RELEASE_DATE=$releaseDate" >> $env:GITHUB_ENV
 
-          Write-Host "Release tag: $releaseTag"
-
-      - name: Create empty release
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $releaseTag = $env:THALIA_RELEASE_TAG
-          if ([string]::IsNullOrWhiteSpace($releaseTag)) { throw "Missing THALIA_RELEASE_TAG." }
-
-          git fetch --tags
-
-          git rev-parse -q --verify "refs/tags/$releaseTag" *> $null
-          if ($LASTEXITCODE -ne 0) {
-            git tag $releaseTag $env:GITHUB_SHA
-            git push origin $releaseTag
-          }
-
-          gh release view $releaseTag *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $releaseTag --title $releaseTag --notes "DoL-Thalia $releaseTag"
-          } else {
-            Write-Host "Release already exists: $releaseTag"
-          }
+          Write-Host "Release: $releaseTag ($game $gameVersion)"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -75,10 +61,50 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.2
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Restore APK signing keystore
+        shell: bash
+        env:
+          THALIA_KEYSTORE_BASE64: ${{ secrets.THALIA_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$THALIA_KEYSTORE_BASE64" || { echo "Missing THALIA_KEYSTORE_BASE64 secret." >&2; exit 1; }
+          mkdir -p input/signing
+          printf '%s' "$THALIA_KEYSTORE_BASE64" | base64 --decode > input/signing/DoL-Thalia.keystore
+
+      - name: Build release assets
+        run: bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Publish release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t assets < <(find dist/zip dist/apk -maxdepth 1 -type f ! -name '*.idsig' 2>/dev/null)
+          test ${#assets[@]} -gt 0 || { echo "No release assets found in dist/zip or dist/apk." >&2; exit 1; }
+
+          git fetch --tags
+          git rev-parse -q --verify "refs/tags/$THALIA_RELEASE_TAG" >/dev/null || {
+            git tag "$THALIA_RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "$THALIA_RELEASE_TAG"
+          }
+          gh release view "$THALIA_RELEASE_TAG" >/dev/null 2>&1 || \
+            gh release create "$THALIA_RELEASE_TAG" --title "$THALIA_RELEASE_TAG" --notes "DoL-Thalia $THALIA_RELEASE_TAG"
+          gh release upload "$THALIA_RELEASE_TAG" "${assets[@]}" --clobber
 
       - name: Build site
         run: bun run site:build

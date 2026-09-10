@@ -6,7 +6,7 @@ import { runTimedStep } from '../core/steps';
 import { readDefaultReleasePreset, readReleasePresets, type ReleasePreset } from '../release/presets';
 import { discoverGameVersions, withGameVersion } from '../sources/game-input';
 import { syncModSources } from '../sources/mod-sources';
-import { syncGitRepo } from '../sources/vendor';
+import { syncGitRepository } from '../sources/vendor';
 import { syncAndBuildBuiltinMods } from './builtin-mods';
 import { buildHtml } from './html';
 import { buildModLoaderTools } from './modloader';
@@ -34,12 +34,14 @@ export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOp
   const presets = await readBuildPresets(config.game.default_mod_list, options.presets);
   const targets = new Set<ReleaseTarget>(options.targets?.length ? options.targets : ALL_RELEASE_TARGETS);
   const needsHtml = targets.has('html') || targets.has('zip') || targets.has('apk');
+  const apkStatus = targets.has('apk') ? apkBuildStatus(config) : undefined;
+  if (options.targets?.includes('apk') && !apkStatus?.canBuild) throw new Error(apkStatus?.message);
 
   // Shared toolchain work is done once; version/preset work happens inside the nested loop below.
-  if (!isCI() && shouldCleanFullRelease(options)) await runTimedStep('Clean local release outputs', () => clean(config));
+  if (!isCI() && shouldCleanFullRelease(options)) await runTimedStep('Clean local release outputs', () => cleanReleaseOutputs(config));
   if (!options.skipPrepare) {
-    await runTimedStep('Sync SugarCube', () => syncGitRepo(config.upstreams.sugarcube_vrelnir));
-    await runTimedStep('Sync ModLoader', () => syncGitRepo(config.upstreams.modloader));
+    await runTimedStep('Sync SugarCube', () => syncGitRepository(config.upstreams.sugarcube_vrelnir));
+    await runTimedStep('Sync ModLoader', () => syncGitRepository(config.upstreams.modloader));
     await runTimedStep('Build Story Format', () => buildStoryFormat(config));
     await runTimedStep('Build ModLoader tools', () => buildModLoaderTools(config));
     await runTimedStep('Build bundled ModLoader mods', () => syncAndBuildBuiltinMods(config));
@@ -47,8 +49,6 @@ export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOp
 
   for (const version of versions) {
     const versionConfig = withGameVersion(config, version);
-    const apkStatus = targets.has('apk') ? apkBuildStatus() : undefined;
-
     for (const preset of presets) {
       // Mod source sync is preset-aware so optional packs are downloaded only when needed.
       if (!options.skipModSources) await runTimedStep(`Sync ${version} ${preset.name} mod sources`, () => syncModSources(versionConfig, preset.mods));
@@ -87,7 +87,7 @@ function shouldCleanFullRelease(options: BuildReleaseOptions): boolean {
   return !options.versions?.length && !options.presets?.length && !options.targets?.length;
 }
 
-async function clean(config: ThaliaConfig): Promise<void> {
+async function cleanReleaseOutputs(config: ThaliaConfig): Promise<void> {
   await rm(dirname(resolve(config.paths.output_zip)), { recursive: true, force: true });
   await rm(resolve(config.paths.output_apk_dir), { recursive: true, force: true });
 }

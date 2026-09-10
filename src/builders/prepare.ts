@@ -1,7 +1,7 @@
 import type { ThaliaConfig } from '../core/config';
 import { runStep } from '../core/steps';
 import { syncModSources } from '../sources/mod-sources';
-import { syncGitRepo } from '../sources/vendor';
+import { syncGitRepository } from '../sources/vendor';
 import { syncAndBuildBuiltinMods } from './builtin-mods';
 import { buildModLoaderTools } from './modloader';
 import { buildStoryFormat, type BuildStoryFormatOptions } from './story-format';
@@ -22,8 +22,8 @@ export const LOCAL_PREPARE_STEPS: PrepareStep[] = [...VANILLA_PREPARE_STEPS, 'bu
 export async function prepareLocalBuild(config: ThaliaConfig, options: PrepareLocalBuildOptions = {}): Promise<void> {
   const selectedSteps = new Set<PrepareStep>(options.steps ?? DEFAULT_PREPARE_STEPS);
 
-  if (selectedSteps.has('sugarcube')) await runStep('Sync SugarCube', () => syncGitRepo(config.upstreams.sugarcube_vrelnir));
-  if (selectedSteps.has('modloader')) await runStep('Sync ModLoader', () => syncGitRepo(config.upstreams.modloader));
+  if (selectedSteps.has('sugarcube')) await runStep('Sync SugarCube', () => syncGitRepository(config.upstreams.sugarcube_vrelnir));
+  if (selectedSteps.has('modloader')) await runStep('Sync ModLoader', () => syncGitRepository(config.upstreams.modloader));
   if (selectedSteps.has('mod-sources')) await runStep(`Sync ${config.game.version} mod sources`, () => syncModSources(config));
   if (selectedSteps.has('story-format')) await runStep('Build Story Format', () => buildStoryFormat(config, options.storyFormat));
   if (selectedSteps.has('modloader-tools')) await runStep('Build ModLoader tools', () => buildModLoaderTools(config));

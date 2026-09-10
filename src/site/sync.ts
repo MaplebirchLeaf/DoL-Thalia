@@ -6,7 +6,7 @@ import { prepareLocalBuild } from '../builders/prepare';
 import { loadConfig, type ThaliaConfig } from '../core/config';
 import { runTimedStep } from '../core/steps';
 import { readReleasePresets } from '../release/presets';
-import { ensureVanillaGameHtml } from '../sources/vanilla-game';
+import { resolveVanillaGameHtml } from '../sources/vanilla-game';
 import { logWarn } from '../core/log';
 
 export interface SiteReleasePreset {
@@ -74,7 +74,7 @@ async function fetchPublishedVersions(): Promise<SiteRelease[] | null> {
 
 // Asset file name: DoL-Thalia[-dolp]-<gameVersion>-<preset>[-<YYYY>].zip|apk
 function collectPresets(version: string, assets: Array<{ name?: string }>): string[] {
-  const gameVersion = editionAndGame(version).gameVersion;
+  const gameVersion = parseReleaseEdition(version).gameVersion;
   const presets = new Set<string>();
   for (const asset of assets) {
     const name = asset.name ?? '';
@@ -83,9 +83,11 @@ function collectPresets(version: string, assets: Array<{ name?: string }>): stri
     const tokens = base.split('-');
     // 'DoL-Thalia' splits into two tokens
     let i = 0;
-    if (tokens[0] === 'DoL' && tokens[1] === 'Thalia') i = 2; else continue;
+    if (tokens[0] === 'DoL' && tokens[1] === 'Thalia') i = 2;
+    else continue;
     if (tokens[i] === 'dolp') i += 1;
-    if (tokens[i] === gameVersion) i += 1; else continue;
+    if (tokens[i] === gameVersion) i += 1;
+    else continue;
     // trailing -YYYY date token (if present)
     if (i < tokens.length && /^\d{4}$/.test(tokens[tokens.length - 1])) tokens.pop();
     const preset = tokens.slice(i).join('-');
@@ -94,7 +96,7 @@ function collectPresets(version: string, assets: Array<{ name?: string }>): stri
   return Array.from(presets);
 }
 
-function editionAndGame(version: string): { edition: 'standard' | 'dolp'; gameVersion: string } {
+function parseReleaseEdition(version: string): { edition: 'standard' | 'dolp'; gameVersion: string } {
   const dolp = /^dolp-/i.test(version);
   const withoutDate = version.replace(/-\d{4}$/, '');
   const gameVersion = dolp ? withoutDate.replace(/^dolp-/i, '') : withoutDate;
@@ -104,7 +106,7 @@ function editionAndGame(version: string): { edition: 'standard' | 'dolp'; gameVe
 async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
   if (existsSync(PLAY_INDEX)) return;
 
-  const sourceHtml = await runTimedStep(`Build ${config.game.version} vanilla source HTML`, () => ensureVanillaGameHtml(config));
+  const sourceHtml = await runTimedStep(`Build ${config.game.version} vanilla source HTML`, () => resolveVanillaGameHtml(config));
   const siteConfig: ThaliaConfig = {
     ...config,
     paths: {
@@ -115,17 +117,17 @@ async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
   };
 
   await prepareLocalBuild(siteConfig, {
-    steps: ['sugarcube', 'modloader', 'story-format', 'modloader-tools'],
+    steps: ['sugarcube', 'modloader', 'story-format', 'modloader-tools', 'builtin-mods'],
     storyFormat: {
       i10nHook: false,
-      modloaderHook: false
+      modloaderHook: true
     }
   });
   await runTimedStep(`Build ${config.game.version} online play HTML`, () =>
     buildHtml(siteConfig, {
       embedIndexDBMods: false,
       minify: false,
-      modloader: false
+      modloader: true
     })
   );
 }

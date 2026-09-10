@@ -1,60 +1,109 @@
 # DoL-Thalia
 
-DoL-Thalia 是一个面向 **Degrees of Lewdity** 的第三方整合包发布项目，基于汉化仓库、ModLoader 与相关模组生态制作。
-
-This is a third-party release project for **Degrees of Lewdity**, built around the Chinese localization, ModLoader, and selected compatible mods.
+[简体中文](README.zh-CN.md) | English
 
 [![Game](https://img.shields.io/badge/Game-Degrees%20of%20Lewdity-purple)](https://gitgud.io/Vrelnir/degrees-of-lewdity)
 [![CHS](https://img.shields.io/badge/CHS-Localization-red)](https://github.com/Eltirosto/Degrees-of-Lewdity-Chinese-Localization)
-[![ModLoader](https://img.shields.io/badge/SC2-ModLoader-blue)](https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader)
+[![ModLoader](https://img.shields.io/badge/SC2-ModLoader-blue)](https://github.com/MaplebirchLeaf/sugarcube-2-ModLoader)
 [![Release](https://img.shields.io/github/v/release/MaplebirchLeaf/DoL-Thalia?label=release)](https://github.com/MaplebirchLeaf/DoL-Thalia/releases/latest)
 
-## 下载与游玩
+DoL-Thalia is a build and release toolkit for creating modded [Degrees of Lewdity](https://gitgud.io/Vrelnir/degrees-of-lewdity) packages. It combines the game, SugarCube, a customized ModLoader, localization resources, and optional visual packs into playable HTML, ZIP, and Android APK releases.
 
-- **ZIP**：下载后解压，打开包内的 HTML 文件游玩。不要把 ZIP 当作 ModLoader 模组导入。
-- **APK**：适合 Android 设备安装游玩。更新前建议先导出存档。
-- **在线版**：仅提供默认整合组合，适合快速体验；需要其它组合时请下载本地版。
+This is an unofficial third-party project. It is not maintained or endorsed by the Degrees of Lewdity developers, the Chinese localization team, or the authors of the bundled mods.
 
-最新版本与历史版本请前往：
+## Download and play
 
-- [DoL-Thalia Releases](https://github.com/MaplebirchLeaf/DoL-Thalia/releases)
-- [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/)
+Use the [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/) to compare packages, or download files directly from [GitHub Releases](https://github.com/MaplebirchLeaf/DoL-Thalia/releases).
 
-## 版本组合
+- **ZIP:** Extract the archive and open the included HTML file in a browser. A release ZIP is a complete game package; do not import it as a ModLoader mod.
+- **APK:** Install it on an Android device. Export your saves before updating or uninstalling the app.
+- **Online:** Intended for quick access and may only offer the default preset.
 
-下载页可能提供多个组合版本。文件名中的组合名用于区分内置模组内容，例如：
+Browser and Android WebView saves depend on local site data. Export your saves before clearing browser data, uninstalling an APK, switching releases, or moving to another device.
 
-- `chs-maplebirch`：基础汉化与 maplebirch 相关整合。
-- `chs-maplebirch-au`：在基础组合上加入 AU 相关美化资源。
+## Reporting problems
 
-如果不确定选择哪个版本，优先使用默认或推荐组合。
+Before opening an issue, reproduce the problem with the upstream Chinese localization release or its online version when applicable.
 
-## 使用前请注意
+- If the same problem occurs upstream, report it to the localization project.
+- If it occurs only in DoL-Thalia, report it in this repository.
+- If it is caused by a specific optional mod or visual pack, consult that project's documentation first.
 
-DoL-Thalia 不是 DoL 原作者、汉化组或相关模组作者的官方发布。它是基于公开发布内容制作的第三方二创整合包。
+Include the game version, preset, package type, platform, and reproduction steps in the report.
 
-遇到问题时，请先用汉化仓库发布的原版汉化包或汉化在线版复现：
+## Development setup
 
-- 如果汉化原版也有同样问题，请优先向汉化仓库反馈。
-- 如果问题只在 DoL-Thalia 中出现，再向本仓库反馈。
-- 如果问题明显来自某个可选模组或美化包，请优先查看对应模组的说明。
+Requirements:
 
-## 存档提醒
+- [Bun](https://bun.sh/) 1.4.2 or later
+- Git
+- Node.js 20.17+ or 22.9+ for Cordova and upstream ModLoader build tools
+- JDK 17 and Android SDK 35 only when building APKs
 
-浏览器与 WebView 的本地存档依赖缓存和站点数据。清理浏览器数据、卸载 APK、切换版本或更换设备前，请先在游戏内导出存档文件。
+Clone the repository and install dependencies:
 
-## 相关链接
+```bash
+git clone https://github.com/MaplebirchLeaf/DoL-Thalia.git
+cd DoL-Thalia
+git submodule update --init vendor/sugarcube-2-ModLoader
+bun install --frozen-lockfile
+```
 
-- [Degrees of Lewdity 原仓库](https://gitgud.io/Vrelnir/degrees-of-lewdity)
-- [Degrees of Lewdity 汉化仓库](https://github.com/Eltirosto/Degrees-of-Lewdity-Chinese-Localization)
-- [ModLoader](https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader)
+Prepare the local toolchain once, then create a quick development build:
+
+```bash
+bun run build:env
+bun run build:local
+```
+
+The standard game can be built from a ZIP placed under `input/game/`. When no matching local ZIP exists, the standard build can fetch and compile the configured upstream game version. DoLP packages must be placed under `input/game-dolp/`.
+
+## Commands
+
+| Command               | Purpose                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| `bun run build:env`   | Prepare SugarCube, ModLoader, story format, tools, and bundled mods |
+| `bun run build:local` | Build a fast local HTML package using prepared inputs               |
+| `bun run build:html`  | Build a fast HTML package for a selected version and preset         |
+| `bun run build:zip`   | Run a complete release build and produce ZIP files                  |
+| `bun run build:apk`   | Run a complete release build and produce APK files                  |
+| `bun run build:all`   | Build HTML, ZIP, and APK release targets                            |
+| `bun run check`       | Run TypeScript, lint, and formatting checks                         |
+| `bun run site:dev`    | Start the release site locally                                      |
+| `bun run site:build`  | Build the release site                                              |
+
+Examples:
+
+```bash
+bun run build:html --preset=chs --version=0.5.12.10
+bun run build:zip --preset=vanilla --version=0.5.12.10
+bun run build:apk --preset=chs --version=0.5.12.10
+bun run build:local --game=dolp
+```
+
+See the [documentation index](docs/README.md) for commands, the build pipeline, private mod sources, and Android SDK setup.
+
+## Project layout
+
+| Path                 | Responsibility                                                           |
+| -------------------- | ------------------------------------------------------------------------ |
+| `src/commands/`      | Command-line entry points and option parsing                             |
+| `src/builders/`      | Story, ModLoader, HTML, ZIP, and APK build stages                        |
+| `src/sources/`       | Game, mod, and upstream source synchronization                           |
+| `input/modList.json` | Release preset definitions                                               |
+| `thalia.config.toml` | Game variants, source locations, outputs, and Android toolchain versions |
+| `site/`              | DoL-Thalia Hub source and release metadata                               |
+
+Generated files are written to `dist/`; local caches and generated Cordova projects are stored under `.cache/`.
+
+## Related projects
+
+- [Degrees of Lewdity](https://gitgud.io/Vrelnir/degrees-of-lewdity)
+- [Degrees of Lewdity Chinese Localization](https://github.com/Eltirosto/Degrees-of-Lewdity-Chinese-Localization)
+- [Thalia ModLoader fork](https://github.com/MaplebirchLeaf/sugarcube-2-ModLoader)
 - [maplebirchFramework](https://github.com/MaplebirchLeaf/SCML-DOL-maplebirchFramework)
 - [DoL-Lyra](https://github.com/DoL-Lyra/Lyra)
 
-## English
+## License
 
-DoL-Thalia is an unofficial third-party integration release for Degrees of Lewdity. It may include localization, ModLoader support, framework mods, visual packs, and other optional content depending on the selected package.
-
-Download ZIP or APK packages from the release page. ZIP packages are complete playable game packages, not ModLoader mods. For issues, first compare with the original Chinese localization release; if the issue only happens in DoL-Thalia, report it here.
-
-Always export your saves before clearing browser data, uninstalling the APK, switching versions, or moving to another device.
+Repository code is available under the [MIT License](LICENSE). Distributed game content, localization data, mods, and visual assets remain subject to their respective upstream licenses and terms. See [LICENSE-CC-BY-NC-SA-4.0](LICENSE-CC-BY-NC-SA-4.0) where applicable.

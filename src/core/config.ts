@@ -61,6 +61,14 @@ export interface ThaliaConfig {
   apk: {
     id: string;
     name: string;
+    toolchain: {
+      build_tools: string;
+      command_line_tools: string;
+      cordova_android: string;
+      gradle: string;
+      java: number;
+      sdk: number;
+    };
   };
 }
 
@@ -74,28 +82,34 @@ export async function loadConfig(configPath = 'thalia.config.toml'): Promise<Tha
 }
 
 function validateConfig(config: ThaliaConfig): void {
-  required(config.project?.name, 'project.name');
+  validateRequiredString(config.project?.name, 'project.name');
 
-  required(config.game?.default_mod_list, 'game.default_mod_list');
+  validateRequiredString(config.game?.default_mod_list, 'game.default_mod_list');
 
-  required(config.upstreams?.sugarcube_vrelnir?.url, 'upstreams.sugarcube_vrelnir.url');
-  required(config.upstreams?.sugarcube_vrelnir?.ref, 'upstreams.sugarcube_vrelnir.ref');
-  required(config.upstreams?.sugarcube_vrelnir?.path, 'upstreams.sugarcube_vrelnir.path');
+  validateRequiredString(config.upstreams?.sugarcube_vrelnir?.url, 'upstreams.sugarcube_vrelnir.url');
+  validateRequiredString(config.upstreams?.sugarcube_vrelnir?.ref, 'upstreams.sugarcube_vrelnir.ref');
+  validateRequiredString(config.upstreams?.sugarcube_vrelnir?.path, 'upstreams.sugarcube_vrelnir.path');
 
-  required(config.upstreams?.modloader?.url, 'upstreams.modloader.url');
-  required(config.upstreams?.modloader?.ref, 'upstreams.modloader.ref');
-  required(config.upstreams?.modloader?.path, 'upstreams.modloader.path');
+  validateRequiredString(config.upstreams?.modloader?.url, 'upstreams.modloader.url');
+  validateRequiredString(config.upstreams?.modloader?.ref, 'upstreams.modloader.ref');
+  validateRequiredString(config.upstreams?.modloader?.path, 'upstreams.modloader.path');
 
-  required(config.paths?.source_html, 'paths.source_html');
-  required(config.paths?.builtin_mods, 'paths.builtin_mods');
-  required(config.paths?.output_html, 'paths.output_html');
-  required(config.paths?.output_zip, 'paths.output_zip');
-  required(config.paths?.output_apk_dir, 'paths.output_apk_dir');
-  required(config.paths?.story_format, 'paths.story_format');
-  required(config.paths?.cordova_project, 'paths.cordova_project');
+  validateRequiredString(config.paths?.source_html, 'paths.source_html');
+  validateRequiredString(config.paths?.builtin_mods, 'paths.builtin_mods');
+  validateRequiredString(config.paths?.output_html, 'paths.output_html');
+  validateRequiredString(config.paths?.output_zip, 'paths.output_zip');
+  validateRequiredString(config.paths?.output_apk_dir, 'paths.output_apk_dir');
+  validateRequiredString(config.paths?.story_format, 'paths.story_format');
+  validateRequiredString(config.paths?.cordova_project, 'paths.cordova_project');
 
-  required(config.apk?.id, 'apk.id');
-  required(config.apk?.name, 'apk.name');
+  validateRequiredString(config.apk?.id, 'apk.id');
+  validateRequiredString(config.apk?.name, 'apk.name');
+  validateRequiredString(config.apk?.toolchain?.cordova_android, 'apk.toolchain.cordova_android');
+  validateRequiredString(config.apk?.toolchain?.build_tools, 'apk.toolchain.build_tools');
+  validateRequiredString(config.apk?.toolchain?.command_line_tools, 'apk.toolchain.command_line_tools');
+  validateRequiredString(config.apk?.toolchain?.gradle, 'apk.toolchain.gradle');
+  validatePositiveInteger(config.apk?.toolchain?.java, 'apk.toolchain.java');
+  validatePositiveInteger(config.apk?.toolchain?.sdk, 'apk.toolchain.sdk');
 
   for (const [gameName, variant] of Object.entries(config.games || {})) {
     if (!variant || typeof variant !== 'object') throw new Error(`Invalid config field: games.${gameName}`);
@@ -119,15 +133,14 @@ function validateConfig(config: ThaliaConfig): void {
   }
 }
 
-function required(value: unknown, name: string): void {
+function validateRequiredString(value: unknown, name: string): void {
   if (typeof value !== 'string' || value.trim() === '') throw new Error(`Missing required config field: ${name}`);
 }
 
-/**
- * Apply a game-lineage variant overlay. 'standard' (or missing) returns the config unchanged;
- * variant keys override game.version/default_mod_list, paths.source_html/builtin_mods, and each
- * mod source's repository via a '<variant>_repository' field (empty string => source skipped).
- */
+function validatePositiveInteger(value: unknown, name: string): void {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) throw new Error(`Invalid config field: ${name}`);
+}
+
 export function withGameVariant(config: ThaliaConfig, game: string | undefined): ThaliaConfig {
   const variant = game && game !== 'standard' ? config.games?.[game] : undefined;
   if (!variant) return config;

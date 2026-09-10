@@ -7,7 +7,7 @@ import { run } from '../core/process';
 
 const VANILLA_GAME_CACHE = '.cache/site/vanilla-game';
 
-export async function ensureVanillaGameHtml(config: ThaliaConfig): Promise<string> {
+export async function resolveVanillaGameHtml(config: ThaliaConfig): Promise<string> {
   const outputDir = resolve(VANILLA_GAME_CACHE, config.game.version);
   const outputHtml = join(outputDir, `Degrees of Lewdity ${config.game.version}.html`);
   if (existsSync(outputHtml)) return outputHtml;

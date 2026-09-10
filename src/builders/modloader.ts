@@ -18,8 +18,8 @@ export async function buildModLoaderTools(config: ThaliaConfig): Promise<void> {
   requireFile(join(root, 'dist-insertTools/packModZip.js'));
 }
 
-export async function readModLoaderLocalModTargets(root: string): Promise<string[]> {
-  const targets = await modListTargets(root);
+export async function readLocalBundledModPaths(modLoaderRoot: string): Promise<string[]> {
+  const targets = await readBundledModPaths(modLoaderRoot);
   return targets.filter(target => {
     if (/^[a-z]+:\/\//i.test(target)) {
       logWarn(`Skip remote builtin mod: ${target}`);
@@ -29,7 +29,7 @@ export async function readModLoaderLocalModTargets(root: string): Promise<string
   });
 }
 
-export async function modListTargets(modLoaderRoot: string): Promise<string[]> {
+export async function readBundledModPaths(modLoaderRoot: string): Promise<string[]> {
   const modListPath = join(modLoaderRoot, 'modList.json');
   if (!existsSync(modListPath)) throw new Error(`modList.json not found: ${modListPath}`);
   const modList = await Bun.file(modListPath).json();

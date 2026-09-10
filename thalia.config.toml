@@ -3,7 +3,7 @@ name = "DoL-Thalia"
 
 [game]
 default_mod_list = "vanilla"
-version = "0.5.11.9"
+version = "0.5.12.10"
 
 [games.dolp]
 version = "0.775"
@@ -59,3 +59,11 @@ cordova_project = ".cache/apk/dol-thalia-android"
 [apk]
 id = "com.maplebirch.dol.thalia"
 name = "DoL Thalia"
+
+[apk.toolchain]
+cordova_android = "14.0.1"
+java = 17
+sdk = 35
+build_tools = "35.0.0"
+command_line_tools = "15859902"
+gradle = "8.13"

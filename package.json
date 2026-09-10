@@ -6,11 +6,12 @@
   "type": "module",
   "scripts": {
     "build:env": "bun run src/commands/prepare.ts sugarcube modloader story-format modloader-tools builtin-mods",
-    "build:all": "bun run src/commands/build-release.ts --skip-prepare --fast",
-    "build:html": "bun run src/commands/build-html.ts --skip-prepare --fast",
     "build:local": "bun run src/commands/build-local.ts --skip-prepare --fast",
+    "build:html": "bun run src/commands/build-html.ts --skip-prepare --fast",
+    "build:zip": "bun run src/commands/build-release.ts --target=zip",
+    "build:apk": "bun run src/commands/build-release.ts --target=apk",
+    "build:all": "bun run src/commands/build-release.ts",
     "check": "tsc --noEmit && oxlint && oxfmt --check",
-    "prepare:local": "bun run build:env",
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
     "site:build": "bun run src/commands/site-build-data.ts && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
@@ -23,14 +24,14 @@
     "vue": "^3.5.34"
   },
   "devDependencies": {
-    "@types/bun": "1.3.14",
+    "@types/bun": "1.4.2",
     "@vitejs/plugin-vue": "^6.0.7",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
     "oxlint-tsgolint": "^0.14.2",
     "terser": "^5.47.1",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.2",
     "vite": "^8.0.14"
   },
-  "packageManager": "bun@1.3.14"
+  "packageManager": "bun@1.4.2"
 }

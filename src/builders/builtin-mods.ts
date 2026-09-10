@@ -4,12 +4,12 @@ import { readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { run, runShell } from '../core/process';
-import { modListTargets } from './modloader';
+import { readBundledModPaths } from './modloader';
 
 interface BuiltinModTarget {
   target: string;
   output: string;
-  dir: string;
+  directory: string;
   name: string;
 }
 
@@ -23,7 +23,7 @@ export async function syncAndBuildBuiltinMods(config: ThaliaConfig): Promise<voi
 async function syncRequiredModSubmodules(modLoaderRoot: string): Promise<void> {
   await run(['git', 'submodule', 'sync'], { cwd: modLoaderRoot });
   const targets = await readBuiltinModTargets(modLoaderRoot);
-  const submodulePaths = unique(targets.map(T => relative(modLoaderRoot, T.dir).replaceAll('\\', '/')));
+  const submodulePaths = unique(targets.map(target => relative(modLoaderRoot, target.directory).replaceAll('\\', '/')));
   if (submodulePaths.length === 0) return;
   await run(['git', 'submodule', 'update', '--init', ...submodulePaths], { cwd: modLoaderRoot });
   await syncKnownNestedSubmodules(targets);
@@ -31,28 +31,28 @@ async function syncRequiredModSubmodules(modLoaderRoot: string): Promise<void> {
 
 async function syncKnownNestedSubmodules(targets: BuiltinModTarget[]): Promise<void> {
   for (const target of targets) {
-    const gitmodulesPath = join(target.dir, '.gitmodules');
+    const gitmodulesPath = join(target.directory, '.gitmodules');
     if (!existsSync(gitmodulesPath)) continue;
     const gitmodulesText = readFileSync(gitmodulesPath, 'utf8');
     const nestedPaths = [...gitmodulesText.matchAll(/^\s*path\s*=\s*(.+)\s*$/gm)].map(match => match[1].trim());
     for (const nestedPath of nestedPaths) {
-      const nestedFullPath = join(target.dir, nestedPath);
+      const nestedFullPath = join(target.directory, nestedPath);
       if (hasDirectoryContent(nestedFullPath)) continue;
-      if (!(await isKnownGitSubmodule(target.dir, nestedPath))) continue;
-      await run(['git', 'submodule', 'sync', '--', nestedPath], { cwd: target.dir });
-      await run(['git', 'submodule', 'update', '--init', '--', nestedPath], { cwd: target.dir });
+      if (!(await isKnownGitSubmodule(target.directory, nestedPath))) continue;
+      await run(['git', 'submodule', 'sync', '--', nestedPath], { cwd: target.directory });
+      await run(['git', 'submodule', 'update', '--init', '--', nestedPath], { cwd: target.directory });
     }
   }
 }
 
 async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModTarget[]> {
-  const targets = (await modListTargets(modLoaderRoot)).map(target => {
+  const targets = (await readBundledModPaths(modLoaderRoot)).map(target => {
     const output = join(modLoaderRoot, target);
     const dir = dirname(output);
     return {
       target,
       output,
-      dir,
+      directory: dir,
       name: basename(dir)
     };
   });
@@ -65,32 +65,32 @@ async function buildBuiltinModTargets(modLoaderRoot: string, targets: BuiltinMod
   if (!existsSync(packModZip)) throw new Error(`Missing packModZip.js: ${packModZip}`);
   for (const target of targets) {
     await cleanBuiltinModTarget(target);
-    await runBuiltinModScripts(target.dir, ['ts:type', 'build:type', 'build:ts']);
+    await runBuiltinModScripts(target.directory, ['ts:type', 'build:type', 'build:ts']);
   }
   for (const target of targets) {
-    await runBuiltinModScripts(target.dir, ['build:webpack', 'build']);
-    await run(['node', packModZip, 'boot.json'], { cwd: target.dir, quiet: true });
+    await runBuiltinModScripts(target.directory, ['build:webpack', 'build']);
+    await run(['node', packModZip, 'boot.json'], { cwd: target.directory, quiet: true });
     if (!existsSync(target.output)) throw new Error(`Missing packed mod zip: ${target.output}`);
   }
 }
 
 async function cleanBuiltinModTarget(target: BuiltinModTarget): Promise<void> {
   await rm(target.output, { force: true });
-  for (const dirName of ['dist', 'dist-ts', 'build']) await rm(join(target.dir, dirName), { recursive: true, force: true });
+  for (const directoryName of ['dist', 'dist-ts', 'build']) await rm(join(target.directory, directoryName), { recursive: true, force: true });
 }
 
-async function runBuiltinModScripts(dir: string, scriptNames: string[]): Promise<void> {
-  const bootJson = join(dir, 'boot.json');
+async function runBuiltinModScripts(directory: string, scriptNames: string[]): Promise<void> {
+  const bootJson = join(directory, 'boot.json');
   if (!existsSync(bootJson)) throw new Error(`Missing boot.json: ${bootJson}`);
-  const packageJsonPath = join(dir, 'package.json');
+  const packageJsonPath = join(directory, 'package.json');
   if (!existsSync(packageJsonPath)) return;
-  await installDependencies(dir);
+  await installDependencies(directory);
   const scripts = (await Bun.file(packageJsonPath).json()).scripts || {};
-  for (const scriptName of scriptNames) if (scripts[scriptName]) await runShell(`corepack yarn run ${scriptName}`, { cwd: dir, quiet: true });
+  for (const scriptName of scriptNames) if (scripts[scriptName]) await runShell(`corepack yarn run ${scriptName}`, { cwd: directory, quiet: true });
 }
-async function installDependencies(dir: string): Promise<void> {
-  if (existsSync(join(dir, '.pnp.cjs')) || existsSync(join(dir, 'node_modules'))) return;
-  await runShell('corepack yarn install', { cwd: dir, quiet: true });
+async function installDependencies(directory: string): Promise<void> {
+  if (existsSync(join(directory, '.pnp.cjs')) || existsSync(join(directory, 'node_modules'))) return;
+  await runShell('corepack yarn install', { cwd: directory, quiet: true });
 }
 
 function hasDirectoryContent(path: string): boolean {
@@ -108,6 +108,6 @@ async function isKnownGitSubmodule(root: string, path: string): Promise<boolean>
   return code === 0 && output.trim().startsWith('160000 ');
 }
 
-function unique<T>(list: T[]): T[] {
-  return [...new Set(list)];
+function unique<T>(values: T[]): T[] {
+  return [...new Set(values)];
 }

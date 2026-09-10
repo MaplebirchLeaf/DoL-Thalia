@@ -7,9 +7,10 @@ import { strFromU8, unzipSync } from 'fflate';
 import { extractZipSafe } from '../core/zip';
 import { minifyJs } from '../core/minify';
 import type { ThaliaConfig } from '../core/config';
-import { readModLoaderLocalModTargets } from './modloader';
+import { readLocalBundledModPaths } from './modloader';
 import { run } from '../core/process';
 import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
+import { resolveVanillaGameHtml } from '../sources/vanilla-game';
 
 const HTML_CACHE_DIR = '.cache/html';
 
@@ -69,7 +70,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
   await mkdir(outputDir, { recursive: true });
   try {
     // Work in a clean cache so ModLoader's insertion tools can mutate the HTML safely.
-    const gameInput = await prepareGameInput(config.paths.source_html, config.game.version, cacheDir);
+    const gameInput = await prepareGameInput(config, cacheDir);
     const cacheHtml = join(cacheDir, 'index.html');
     await copyFile(gameInput.sourceHtml, cacheHtml);
     await run(['node', sc2ReplaceTool, cacheHtml, storyFormat], { quiet: true });
@@ -77,15 +78,15 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     requireFile(replacedHtml);
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
-      const localModTargets = await readModLoaderLocalModTargets(modLoaderRoot);
+      const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
       const preset = buildOptions.releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
-      const indexDBModFiles = embedIndexDBMods ? await listIndexDBModFiles(inputModsDir, config.game.version, preset.mods) : [];
+      const indexedDbModFiles = embedIndexDBMods ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
       await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });
       generatedHtml = `${replacedHtml}.mod.html`;
       requireFile(generatedHtml);
-      if (embedIndexDBMods) await insertIndexDBMods(generatedHtml, indexDBModFiles);
+      if (embedIndexDBMods) await embedIndexedDbMods(generatedHtml, indexedDbModFiles);
     }
     if (minifyHtml) await minifySugarCubeScript(generatedHtml);
     await copyFile(generatedHtml, outputHtml);
@@ -100,8 +101,10 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
   }
 }
 
-async function prepareGameInput(sourcePattern: string, gameVersion: string, cacheDir: string): Promise<GameInput> {
-  const source = await findGameSource(sourcePattern, gameVersion);
+async function prepareGameInput(config: ThaliaConfig, cacheDir: string): Promise<GameInput> {
+  const localSource = await findGameSource(config.paths.source_html, config.game.version);
+  const source = localSource ?? (isVanillaGameInput(config.paths.source_html) ? await resolveVanillaGameHtml(config) : undefined);
+  if (!source) throw new Error(`Game input has no file for ${config.game.version}: ${config.paths.source_html}`);
   if (extname(source).toLowerCase() !== '.zip') {
     const sourceDir = dirname(source);
     return {
@@ -120,6 +123,10 @@ async function prepareGameInput(sourcePattern: string, gameVersion: string, cach
   };
 }
 
+function isVanillaGameInput(pattern: string): boolean {
+  return pattern.replaceAll('\\', '/') === 'input/game/*.zip';
+}
+
 async function copyRuntimeAssets(options: { sourceHtml: string; imagesDir: string; outputDir: string }): Promise<void> {
   const sourceDir = dirname(options.sourceHtml);
   if (existsSync(options.imagesDir)) await cp(options.imagesDir, join(options.outputDir, 'img'), { recursive: true, force: true });
@@ -131,7 +138,7 @@ async function copyRuntimeAssets(options: { sourceHtml: string; imagesDir: strin
   if (!existsSync(remoteModList)) await writeFile(remoteModList, '[]\n', 'utf8');
 }
 
-async function findGameSource(pattern: string, gameVersion: string): Promise<string> {
+async function findGameSource(pattern: string, gameVersion: string): Promise<string | undefined> {
   if (!pattern.includes('*')) {
     const file = resolve(pattern);
     requireFile(file);
@@ -140,13 +147,13 @@ async function findGameSource(pattern: string, gameVersion: string): Promise<str
   const extension = extname(pattern).toLowerCase();
   if (extension !== '.html' && extension !== '.zip') throw new Error(`Unsupported game input pattern: ${pattern}`);
   const dir = resolve(pattern.slice(0, -`*${extension}`.length));
-  if (!existsSync(dir)) throw new Error(`Game input directory does not exist: ${dir}`);
+  if (!existsSync(dir)) return undefined;
   const files = await readdir(dir);
   const matches = files
     .filter(file => extname(file).toLowerCase() === extension)
     .filter(file => file.includes(gameVersion))
     .sort();
-  if (matches.length === 0) throw new Error(`Game input directory has no ${extension} file for ${gameVersion}: ${dir}`);
+  if (matches.length === 0) return undefined;
   if (matches.length > 1) throw new Error(`Game input directory has multiple ${extension} files for ${gameVersion}: ${matches.join(', ')}`);
   return join(dir, matches[0]);
 }
@@ -171,7 +178,7 @@ async function collectFiles(dir: string, extension: string, result: string[]): P
   }
 }
 
-async function listIndexDBModFiles(modsRoot: string, gameVersion: string, modSourceNames: string[]): Promise<string[]> {
+async function listIndexedDbModFiles(modsRoot: string, gameVersion: string, modSourceNames: string[]): Promise<string[]> {
   const result: string[] = [];
   const versionDir = join(modsRoot, gameVersion);
   for (const sourceName of modSourceNames) {
@@ -186,18 +193,18 @@ async function findModSourceFiles(versionDir: string, sourceName: string): Promi
   const result: string[] = [];
   const entries = existsSync(versionDir) ? await readdir(versionDir, { withFileTypes: true }) : [];
   for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.includes(sourceName) || !isIndexDBModFile(entry.name)) continue;
+    if (!entry.isFile() || !entry.name.includes(sourceName) || !isIndexedDbModFile(entry.name)) continue;
     result.push(join(versionDir, entry.name));
   }
   return [...new Set(result)];
 }
 
-function isIndexDBModFile(file: string): boolean {
+function isIndexedDbModFile(file: string): boolean {
   const lower = file.toLowerCase();
   return INDEXDB_MOD_EXTENSIONS.some(extension => lower.endsWith(extension));
 }
 
-async function insertIndexDBMods(htmlPath: string, modFiles: string[]): Promise<void> {
+async function embedIndexedDbMods(htmlPath: string, modFiles: string[]): Promise<void> {
   const items: EmbeddedIndexDBMod[] = [];
   for (const modFile of modFiles) {
     const data = await readFile(modFile);

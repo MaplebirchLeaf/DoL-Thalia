@@ -16,7 +16,7 @@ export async function discoverGameVersions(config: ThaliaConfig): Promise<string
 
   const extension = extname(pattern).toLowerCase();
   const dir = resolve(pattern.slice(0, -`*${extension}`.length));
-  if (!existsSync(dir)) throw new Error(`Game input directory does not exist: ${dir}`);
+  if (!existsSync(dir)) return [config.game.version];
   const files = (await readdir(dir)).filter(file => extname(file).toLowerCase() === extension);
   const versions = new Set<string>();
   for (const file of files) {
@@ -29,7 +29,7 @@ export async function discoverGameVersions(config: ThaliaConfig): Promise<string
     // game.version when a matching file exists in the source directory.
     const fallback = config.game.version?.trim();
     if (fallback && files.some(file => file.includes(fallback))) return [fallback];
-    throw new Error(`Game input directory has no versioned ${extension} file: ${dir}`);
+    return [config.game.version];
   }
   return result;
 }
