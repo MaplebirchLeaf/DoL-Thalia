@@ -1,6 +1,12 @@
 # dependencies
 node_modules/
 
+# machine-local environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # build outputs and caches
 dist/
 .cache/

@@ -47,7 +47,19 @@ yes | sdkmanager --licenses
 sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 ```
 
-把上面的 `JAVA_HOME`、`ANDROID_HOME`、`ANDROID_SDK_ROOT` 和 `PATH` 配置追加到 shell 启动文件，例如 `~/.bashrc`。
+不必在每次构建前重新 `export`。复制仓库提供的模板并填入本机的绝对路径：
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ANDROID_HOME=/home/your-name/Android/Sdk
+ANDROID_SDK_ROOT=/home/your-name/Android/Sdk
+```
+
+Bun 执行仓库脚本时会自动读取根目录的 `.env`。该文件已被 Git 忽略，不要把个人路径或令牌写入 `.env.example`。构建脚本会自行补充 JDK、Command-line Tools、Platform Tools 和 Gradle 的 `PATH`，因此 `.env` 无需配置 `PATH`。
 
 ## macOS
 
@@ -113,6 +125,8 @@ sdkmanager.bat "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 ```
 
 如果 `JAVA_HOME` 没有由安装器自动设置，把它指向 Temurin 17 的安装目录，并重新打开终端。
+
+也可以复制 `.env.example` 为 `.env`，使用绝对路径填写 `JAVA_HOME`、`ANDROID_HOME` 和 `ANDROID_SDK_ROOT`；这样只对当前仓库生效。
 
 ## 检查与构建
 
