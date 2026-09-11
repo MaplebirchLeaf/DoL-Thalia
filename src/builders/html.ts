@@ -106,10 +106,14 @@ async function injectModDependencyProxy(htmlPath: string): Promise<void> {
   const proxyUrl = Bun.env.THALIA_MOD_PROXY_URL?.trim();
   if (!proxyUrl) return;
   const html = await readFile(htmlPath, 'utf8');
-  const script = `<script>window.modDependencyProxyUrl=${JSON.stringify(proxyUrl)};</script>`;
-  const bodyEnd = html.lastIndexOf('</body>');
-  const output = bodyEnd === -1 ? `${html}\n${script}\n` : `${html.slice(0, bodyEnd)}${script}${html.slice(bodyEnd)}`;
+  const meta = `<meta name="thalia-mod-dependency-proxy" content="${escapeHtmlAttribute(proxyUrl)}">`;
+  const headEnd = html.indexOf('</head>');
+  const output = headEnd === -1 ? `${meta}\n${html}` : `${html.slice(0, headEnd)}${meta}${html.slice(headEnd)}`;
   await writeFile(htmlPath, output, 'utf8');
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
 async function prepareGameInput(config: ThaliaConfig, cacheDir: string): Promise<GameInput> {
