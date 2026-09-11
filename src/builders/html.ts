@@ -88,6 +88,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
       requireFile(generatedHtml);
       if (embedIndexDBMods) await embedIndexedDbMods(generatedHtml, indexedDbModFiles);
     }
+    await injectModDependencyProxy(generatedHtml);
     if (minifyHtml) await minifySugarCubeScript(generatedHtml);
     await copyFile(generatedHtml, outputHtml);
     await copyRuntimeAssets({
@@ -99,6 +100,16 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     await rm(cacheDir, { recursive: true, force: true });
     await rm(cleanLocalModListPath, { force: true });
   }
+}
+
+async function injectModDependencyProxy(htmlPath: string): Promise<void> {
+  const proxyUrl = Bun.env.THALIA_MOD_PROXY_URL?.trim();
+  if (!proxyUrl) return;
+  const html = await readFile(htmlPath, 'utf8');
+  const script = `<script>window.modDependencyProxyUrl=${JSON.stringify(proxyUrl)};</script>`;
+  const bodyEnd = html.lastIndexOf('</body>');
+  const output = bodyEnd === -1 ? `${html}\n${script}\n` : `${html.slice(0, bodyEnd)}${script}${html.slice(bodyEnd)}`;
+  await writeFile(htmlPath, output, 'utf8');
 }
 
 async function prepareGameInput(config: ThaliaConfig, cacheDir: string): Promise<GameInput> {
