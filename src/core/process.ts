@@ -35,7 +35,7 @@ async function spawnAndWait(argv: string[], label: string, options: RunOptions):
   const code = await child.exited;
   if (code !== 0) {
     if (options.printOutputOnError !== false && output.trim()) console.error(output.trimEnd());
-    throw new Error(`命令失败（退出码 ${code}）：${label}`);
+    throw new Error(`命令失败（退出码 ${code}${options.cwd ? `，目录 ${options.cwd}` : ''}）：${label}`);
   }
 }
 

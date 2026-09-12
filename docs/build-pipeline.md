@@ -43,6 +43,8 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 
 20 个 ModLoader 基础模组已经内嵌在 HTML 和 APK 中，运行时不会下载。缺失依赖需要按模组 `downloadUrl` 下载时，HTML/ZIP 使用 `THALIA_MOD_PROXY_URL` 配置的代理处理浏览器 CORS；APK 会移除该代理配置，通过内置 Android 下载器直连 GitHub Release，因此不会消耗 Cloudflare Worker 请求。APK 原生下载仅接受 HTTPS GitHub Release 的 `.mod.zip` 文件，不会在失败时自动回退到 Worker。
 
+APK 下载先写入应用私有临时文件，再以 256 KiB 分块传入 WebView，避免 Java 和桥接层同时持有整份 ZIP。单份下载上限为 128 MiB，支持进度和取消，完成、失败或页面重置后清理临时文件。最终安装仍需在 WebView 中解析 ZIP，因此该上限不是应用总内存上限。
+
 正式构建默认压缩 SugarCube 主脚本。`--fast` 只用于本地排查或快速验证，不应作为最终发布质量的默认值。
 
 ## 缓存与清理
@@ -50,6 +52,7 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 - `.cache/html/`：HTML 组装的临时文件。
 - `.cache/site/vanilla-game/`：从源码编译的标准版游戏 HTML。
 - `.cache/apk/`：生成的 Cordova Android 工程。
+- `.cache/build/`：依赖安装和内嵌模组构建指纹；删除后触发重新安装校验和重建。
 - `.cache/android-toolchain/`：构建脚本下载的 Gradle。
 - `dist/`：最终构建产物。
 
@@ -58,5 +61,7 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 ## 本地与 GitHub Actions
 
 GitHub Actions 只能读取已检出的仓库、公开下载源、构建 Secret 和显式授权的私有仓库，不能访问开发者电脑中的 `input/` 文件。需要私有外部资源时，使用[私有模组源](private-mod-sources.md)；若资源不能上传到任何云端位置，必须在本地构建并手动发布产物。
+
+HTML/ZIP 的 Worker 地址通过仓库 Actions Variable `THALIA_MOD_PROXY_URL` 配置，本地使用忽略的 `.env` 中的同名变量。它不是访问令牌；地址会随网页产物分发。工作流在发布前检查构建代码、原生下载和三个运行时子仓库的回归测试。
 
 常用入口和参数见[命令参考](commands.md)，APK 环境见[Android APK 环境](android-build.md)。

@@ -75,6 +75,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Check build tools and native downloader
+        run: |
+          bun run check
+          bun test ./tests
+          bun run test:native
+
       - name: Restore APK signing keystore
         shell: bash
         env:
@@ -88,6 +94,10 @@ jobs:
         run: bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
+          THALIA_MOD_PROXY_URL: ${{ vars.THALIA_MOD_PROXY_URL }}
+
+      - name: Verify runtime regressions
+        run: bun run test:runtime
 
       - name: Publish release assets
         shell: bash

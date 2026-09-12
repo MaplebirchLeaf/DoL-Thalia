@@ -19,6 +19,9 @@ bun run build:env
 | `bun run build:apk`    | 执行正式流程并生成 APK                                 |
 | `bun run build:all`    | 生成 HTML、ZIP 和 APK                                  |
 | `bun run check`        | 检查 TypeScript、lint 和格式                           |
+| `bun test ./tests`     | 检查构建缓存和原生下载桥接逻辑                         |
+| `bun run test:native`  | 在 JDK 17 上验证下载分块、取消和文件清理               |
+| `bun run test:runtime` | 运行 ModLoader、GUI 和 BSA 的运行时回归测试            |
 | `bun run fix`          | 自动修复可修复的 lint 和格式问题                       |
 | `bun run site:dev`     | 启动发布站点开发服务器                                 |
 | `bun run site:build`   | 生成站点数据并构建发布站点                             |
@@ -98,11 +101,15 @@ bun run src/commands/prepare.ts sugarcube modloader story-format modloader-tools
 
 `all` 使用全部默认阶段。`pure` 或 `vanilla` 会生成不含 ModLoader hook 的 Story Format。Story Format 还支持 `--no-modloader`、`--no-i10n`、`--modloader-only`、`--i10n-only` 和 `--plain`。
 
+`builtin-mods` 会校验源码、依赖和产物指纹，只重建受影响的模组。依赖安装使用锁文件；已初始化的模组保留当前 Git 检出，只有缺失的子模块才会初始化。需要切换版本时先显式更新子模块，再运行 prepare。
+
 ## 何时跳过步骤
 
 - 只修改 DoL-Thalia 的 HTML 组装代码：使用 `build:html` 或 `build:local`。
 - 修改 SugarCube、ModLoader 或基础模组：先运行对应 prepare 阶段。
 - 外部 Release 资源没有变化：正式构建可加 `--skip-mod-sources`。
 - 首次构建、更新子模块或排查缓存问题：不要使用跳过参数。
+
+需要强制重建内嵌模组时，删除 `.cache/build/` 后重新执行 `builtin-mods`；无需删除本地游戏、模组或 SDK。运行时回归测试需要先完成 `build:env`，以准备各子仓库的依赖。测试内容和性能证据见[运行时验证](runtime-verification.md)。
 
 构建阶段和目录职责见[构建流程](build-pipeline.md)。
