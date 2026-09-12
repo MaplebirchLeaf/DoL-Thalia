@@ -1,0 +1,16 @@
+{
+  "name": "thalia-native-download",
+  "version": "1.0.0",
+  "description": "Cordova bridge for downloading GitHub Release mod archives without a web proxy.",
+  "keywords": [
+    "android",
+    "cordova"
+  ],
+  "license": "MIT",
+  "cordova": {
+    "id": "thalia-native-download",
+    "platforms": [
+      "android"
+    ]
+  }
+}

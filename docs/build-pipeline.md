@@ -41,6 +41,8 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 - ZIP 收集 HTML 目录，重命名入口 HTML，并写入 `dist/zip/`。
 - APK 把同一 HTML 目录复制进 Cordova 工程，应用图标和启动主题，然后使用 Android 工具链构建、对齐并签名。
 
+20 个 ModLoader 基础模组已经内嵌在 HTML 和 APK 中，运行时不会下载。缺失依赖需要按模组 `downloadUrl` 下载时，HTML/ZIP 使用 `THALIA_MOD_PROXY_URL` 配置的代理处理浏览器 CORS；APK 会移除该代理配置，通过内置 Android 下载器直连 GitHub Release，因此不会消耗 Cloudflare Worker 请求。APK 原生下载仅接受 HTTPS GitHub Release 的 `.mod.zip` 文件，不会在失败时自动回退到 Worker。
+
 正式构建默认压缩 SugarCube 主脚本。`--fast` 只用于本地排查或快速验证，不应作为最终发布质量的默认值。
 
 ## 缓存与清理

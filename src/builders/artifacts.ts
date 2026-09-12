@@ -16,7 +16,21 @@ const APK_ICON_SOURCE = 'input/icon.png';
 const APK_KEYSTORE = 'input/signing/DoL-Thalia.keystore';
 const APK_KEY_ALIAS = 'dol-thalia';
 const APK_KEY_PASSWORD = 'android';
-const CORDOVA_PLUGINS = ['cordova-plugin-save-dialog@2.0.1', 'cordova-plugin-rnk-toast@0.0.1'];
+interface CordovaPluginSource {
+  files?: string[];
+  id: string;
+  source: string;
+}
+
+const CORDOVA_PLUGINS: CordovaPluginSource[] = [
+  { id: 'cordova-plugin-save-dialog', source: 'cordova-plugin-save-dialog@2.0.1' },
+  { id: 'cordova-plugin-rnk-toast', source: 'cordova-plugin-rnk-toast@0.0.1' },
+  {
+    id: 'thalia-native-download',
+    source: resolve('cordova-plugins/thalia-native-download'),
+    files: ['package.json', 'plugin.xml', 'www/NativeDownload.js', 'src/android/NativeDownloadPlugin.java']
+  }
+];
 
 export interface ApkBuildStatus {
   canBuild: boolean;
@@ -106,26 +120,29 @@ async function prepareCordovaWww(sourceDir: string, wwwDir: string): Promise<voi
   await rm(wwwDir, { recursive: true, force: true });
   await cp(sourceDir, wwwDir, { recursive: true, force: true });
   await writeFile(join(wwwDir, 'custom_cordova_additions.js'), CORDOVA_ADDITIONS, 'utf8');
-  await injectCordovaScripts(join(wwwDir, 'index.html'));
+  await prepareCordovaHtml(join(wwwDir, 'index.html'));
 }
 
-async function injectCordovaScripts(indexHtml: string): Promise<void> {
+async function prepareCordovaHtml(indexHtml: string): Promise<void> {
   if (!existsSync(indexHtml)) throw new Error(`Missing file: ${indexHtml}`);
   const html = (await readFile(indexHtml, 'utf8'))
     .replace(/<script\s+src=["']cordova\.js["']\s+type=["']text\/javascript["']><\/script>\s*/gi, '')
-    .replace(/<script\s+src=["']custom_cordova_additions\.js["']\s+type=["']text\/javascript["']><\/script>\s*/gi, '');
+    .replace(/<script\s+src=["']custom_cordova_additions\.js["']\s+type=["']text\/javascript["']><\/script>\s*/gi, '')
+    .replace(/<meta\s+name=["']thalia-mod-dependency-proxy["'][^>]*>\s*/gi, '')
+    .replace(/<meta\s+name=["']thalia-mod-download-transport["'][^>]*>\s*/gi, '');
+  const transport = '<meta name="thalia-mod-download-transport" content="native">\n';
   const scripts = '<script src="cordova.js" type="text/javascript"></script>\n<script src="custom_cordova_additions.js" type="text/javascript"></script>\n';
   const firstScript = html.indexOf('<script');
   if (firstScript !== -1) {
-    await writeFile(indexHtml, `${html.slice(0, firstScript)}${scripts}${html.slice(firstScript)}`, 'utf8');
+    await writeFile(indexHtml, `${html.slice(0, firstScript)}${transport}${scripts}${html.slice(firstScript)}`, 'utf8');
     return;
   }
   const headEnd = html.indexOf('</head>');
   if (headEnd !== -1) {
-    await writeFile(indexHtml, `${html.slice(0, headEnd)}${scripts}${html.slice(headEnd)}`, 'utf8');
+    await writeFile(indexHtml, `${html.slice(0, headEnd)}${transport}${scripts}${html.slice(headEnd)}`, 'utf8');
     return;
   }
-  await writeFile(indexHtml, `${scripts}${html}`, 'utf8');
+  await writeFile(indexHtml, `${transport}${scripts}${html}`, 'utf8');
 }
 
 async function writeCordovaConfig(config: ThaliaConfig, configXml: string): Promise<boolean> {
@@ -173,12 +190,22 @@ async function resetAndroidPlatformIfPackageChanged(config: ThaliaConfig, projec
 async function ensureCordovaPlugins(projectDir: string): Promise<boolean> {
   let changed = false;
   for (const plugin of CORDOVA_PLUGINS) {
-    const pluginId = plugin.split('@')[0];
-    if (existsSync(join(projectDir, 'plugins', pluginId))) continue;
-    await run(createCordovaCommand(['plugin', 'add', plugin]), { cwd: projectDir, quiet: true });
+    const installed = join(projectDir, 'plugins', plugin.id);
+    if (existsSync(installed) && (!plugin.files || (await pluginFilesMatch(plugin.source, installed, plugin.files)))) continue;
+    if (existsSync(installed)) await run(createCordovaCommand(['plugin', 'remove', plugin.id]), { cwd: projectDir, quiet: true });
+    await run(createCordovaCommand(['plugin', 'add', plugin.source]), { cwd: projectDir, quiet: true });
     changed = true;
   }
   return changed;
+}
+
+async function pluginFilesMatch(sourceDir: string, installedDir: string, files: string[]): Promise<boolean> {
+  for (const file of files) {
+    const source = join(sourceDir, file);
+    const installed = join(installedDir, file);
+    if (!existsSync(installed) || !(await readFile(source)).equals(await readFile(installed))) return false;
+  }
+  return true;
 }
 
 async function syncAndroidWww(projectDir: string): Promise<void> {

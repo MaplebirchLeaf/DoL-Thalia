@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="thalia-native-download" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+  <name>Thalia Native Download</name>
+  <js-module name="NativeDownload" src="www/NativeDownload.js" />
+  <platform name="android">
+    <config-file parent="/*" target="res/xml/config.xml">
+      <feature name="ThaliaNativeDownload">
+        <param name="android-package" value="app.thalia.native_download.NativeDownloadPlugin" />
+      </feature>
+    </config-file>
+    <source-file src="src/android/NativeDownloadPlugin.java" target-dir="src/app/thalia/native_download" />
+  </platform>
+</plugin>
