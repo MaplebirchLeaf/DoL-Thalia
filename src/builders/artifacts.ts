@@ -28,7 +28,7 @@ const CORDOVA_PLUGINS: CordovaPluginSource[] = [
   {
     id: 'thalia-native-download',
     source: resolve('cordova-plugins/thalia-native-download'),
-    files: ['package.json', 'plugin.xml', 'www/NativeDownload.js', 'src/android/NativeDownloadPlugin.java']
+    files: ['package.json', 'plugin.xml', 'www/NativeDownload.js', 'src/android/NativeDownloadPlugin.java', 'src/android/DownloadArchive.java']
   }
 ];
 
