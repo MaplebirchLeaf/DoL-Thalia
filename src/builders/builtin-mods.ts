@@ -1,10 +1,19 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { run, runShell } from '../core/process';
 import { readBundledModPaths } from './modloader';
+import { dependencyFingerprint, ensureYarnDependencies, fingerprintFile, fingerprintTree, fingerprintValues, hasYarnDependencies, readBuildDependencies } from '../core/build-cache';
+import { logInfo } from '../core/log';
+
+interface BuildCacheEntry {
+  input: string;
+  output: string;
+}
+
+const BUILD_CACHE_FILE = '.cache/build/builtin-mods.json';
 
 interface BuiltinModTarget {
   target: string;
@@ -23,9 +32,8 @@ export async function syncAndBuildBuiltinMods(config: ThaliaConfig): Promise<voi
 async function syncRequiredModSubmodules(modLoaderRoot: string): Promise<void> {
   await run(['git', 'submodule', 'sync'], { cwd: modLoaderRoot });
   const targets = await readBuiltinModTargets(modLoaderRoot);
-  const submodulePaths = unique(targets.map(target => relative(modLoaderRoot, target.directory).replaceAll('\\', '/')));
-  if (submodulePaths.length === 0) return;
-  await run(['git', 'submodule', 'update', '--init', ...submodulePaths], { cwd: modLoaderRoot });
+  const submodulePaths = unique(targets.filter(target => !existsSync(join(target.directory, '.git'))).map(target => relative(modLoaderRoot, target.directory).replaceAll('\\', '/')));
+  if (submodulePaths.length > 0) await run(['git', 'submodule', 'update', '--init', ...submodulePaths], { cwd: modLoaderRoot });
   await syncKnownNestedSubmodules(targets);
 }
 
@@ -63,15 +71,64 @@ async function readBuiltinModTargets(modLoaderRoot: string): Promise<BuiltinModT
 async function buildBuiltinModTargets(modLoaderRoot: string, targets: BuiltinModTarget[]): Promise<void> {
   const packModZip = join(modLoaderRoot, 'dist-insertTools', 'packModZip.js');
   if (!existsSync(packModZip)) throw new Error(`Missing packModZip.js: ${packModZip}`);
+  const coreInputs = await Promise.all(['dist-BeforeSC2', 'dist-ForSC2', 'dist-insertTools'].map(dir => fingerprintTree(join(modLoaderRoot, dir))));
+  coreInputs.push(await readFile('src/builders/builtin-mods.ts', 'utf8'), await readFile('src/core/build-cache.ts', 'utf8'), process.version, Bun.version, 'production');
+  const sources = new Map<string, string>();
+  const names = new Map<string, string>();
+  const dependencyNames = new Map<string, string[]>();
   for (const target of targets) {
+    const boot = await Bun.file(join(target.directory, 'boot.json')).json();
+    names.set(boot.name, target.name);
+    for (const alias of boot.alias ?? []) names.set(alias, target.name);
+    dependencyNames.set(
+      target.name,
+      (boot.dependenceInfo ?? []).map((dependency: { modName: string }) => dependency.modName)
+    );
+    sources.set(target.name, await fingerprintTree(target.directory, true));
+  }
+  const dependencies = new Map([...dependencyNames].map(([name, list]) => [name, list.map(dependency => names.get(dependency) ?? dependency)]));
+  for (const [name, imported] of await readBuildDependencies(targets)) {
+    dependencies.set(name, unique([...(dependencies.get(name) ?? []), ...imported]));
+  }
+  let cache: Record<string, BuildCacheEntry> = {};
+  try {
+    cache = JSON.parse(await readFile(BUILD_CACHE_FILE, 'utf8'));
+    if (!cache || typeof cache !== 'object' || Array.isArray(cache)) cache = {};
+  } catch {
+    /* Missing or damaged cache always triggers a rebuild. */
+  }
+  const inputs = new Map(targets.map(target => [target.name, fingerprintValues([...coreInputs, dependencyFingerprint(target.name, sources, dependencies)])]));
+  const changed: BuiltinModTarget[] = [];
+  for (const target of targets) {
+    const previous = cache[target.name];
+    if (!hasYarnDependencies(target.directory) || !previous || previous.input !== inputs.get(target.name) || previous.output !== (await fingerprintModOutput(target))) changed.push(target);
+  }
+  logInfo(`Bundled mods: rebuild ${changed.length}, reuse ${targets.length - changed.length}`);
+  // Generate every changed type surface before bundling consumers of those declarations.
+  for (const target of changed) {
+    await ensureYarnDependencies(target.directory);
     await cleanBuiltinModTarget(target);
     await runBuiltinModScripts(target.directory, ['ts:type', 'build:type', 'build:ts']);
   }
-  for (const target of targets) {
+  for (const target of changed) {
+    logInfo(`Build ${target.name}`);
     await runBuiltinModScripts(target.directory, ['build:webpack', 'build']);
     await run(['node', packModZip, 'boot.json'], { cwd: target.directory, quiet: true });
     if (!existsSync(target.output)) throw new Error(`Missing packed mod zip: ${target.output}`);
+    cache[target.name] = { input: inputs.get(target.name)!, output: await fingerprintModOutput(target) };
   }
+  await mkdir(dirname(BUILD_CACHE_FILE), { recursive: true });
+  await writeFile(BUILD_CACHE_FILE, `${JSON.stringify(Object.fromEntries(targets.map(target => [target.name, cache[target.name]])), null, 2)}\n`);
+}
+
+async function fingerprintModOutput(target: BuiltinModTarget): Promise<string> {
+  if (!existsSync(target.output)) return '';
+  const files = [await fingerprintFile(target.output)];
+  for (const name of ['dist', 'dist-ts', 'build']) {
+    const directory = join(target.directory, name);
+    files.push(name, existsSync(directory) ? await fingerprintTree(directory) : 'missing');
+  }
+  return fingerprintValues(files);
 }
 
 async function cleanBuiltinModTarget(target: BuiltinModTarget): Promise<void> {
@@ -84,13 +141,8 @@ async function runBuiltinModScripts(directory: string, scriptNames: string[]): P
   if (!existsSync(bootJson)) throw new Error(`Missing boot.json: ${bootJson}`);
   const packageJsonPath = join(directory, 'package.json');
   if (!existsSync(packageJsonPath)) return;
-  await installDependencies(directory);
   const scripts = (await Bun.file(packageJsonPath).json()).scripts || {};
-  for (const scriptName of scriptNames) if (scripts[scriptName]) await runShell(`corepack yarn run ${scriptName}`, { cwd: directory, quiet: true });
-}
-async function installDependencies(directory: string): Promise<void> {
-  if (existsSync(join(directory, '.pnp.cjs')) || existsSync(join(directory, 'node_modules'))) return;
-  await runShell('corepack yarn install', { cwd: directory, quiet: true });
+  for (const scriptName of scriptNames) if (scripts[scriptName]) await runShell(`corepack yarn run ${scriptName}`, { cwd: directory, quiet: true, env: { NODE_ENV: 'production' } });
 }
 
 function hasDirectoryContent(path: string): boolean {

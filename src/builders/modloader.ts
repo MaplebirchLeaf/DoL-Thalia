@@ -4,14 +4,15 @@ import type { ThaliaConfig } from '../core/config';
 import { requireFile } from '../core/fs';
 import { logWarn } from '../core/log';
 import { runShell } from '../core/process';
+import { ensureYarnDependencies } from '../core/build-cache';
 
 export async function buildModLoaderTools(config: ThaliaConfig): Promise<void> {
   const root = resolve(config.upstreams.modloader.path);
-  await installDependencies(root);
+  await ensureYarnDependencies(root);
   await runShell('corepack yarn run ts:BeforeSC2', { cwd: root, quiet: true });
-  await runShell('corepack yarn run webpack:BeforeSC2', { cwd: root, quiet: true });
+  await runShell('corepack yarn run webpack:BeforeSC2', { cwd: root, quiet: true, env: { NODE_ENV: 'production' } });
   await runShell('corepack yarn run ts:ForSC2', { cwd: root, quiet: true });
-  await runShell('corepack yarn run webpack:insertTools', { cwd: root, quiet: true });
+  await runShell('corepack yarn run webpack:insertTools', { cwd: root, quiet: true, env: { NODE_ENV: 'production' } });
   requireFile(join(root, 'dist-BeforeSC2/BeforeSC2.js'));
   requireFile(join(root, 'dist-insertTools/insert2html.js'));
   requireFile(join(root, 'dist-insertTools/sc2ReplaceTool.js'));
@@ -37,9 +38,4 @@ export async function readBundledModPaths(modLoaderRoot: string): Promise<string
     throw new Error(`Invalid modList.json: ${modListPath}`);
   }
   return [...new Set(modList)].filter(target => target.toLowerCase().endsWith('.mod.zip'));
-}
-
-async function installDependencies(root: string): Promise<void> {
-  if (existsSync(join(root, '.pnp.cjs')) || existsSync(join(root, 'node_modules'))) return;
-  await runShell('corepack yarn install', { cwd: root, quiet: true });
 }
