@@ -29,7 +29,7 @@ public final class NativeDownloadPlugin extends CordovaPlugin {
                     DownloadArchive archive;
                     synchronized (downloads) { archive = downloads.get(id); }
                     if (archive == null) throw new IllegalStateException("Download is no longer available");
-                    callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, archive.read(offset)));
+                    callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, archive.readChunk(offset)));
                 } catch (Exception error) {
                     callback.error(message(error));
                 }

@@ -86,7 +86,7 @@ final class DownloadArchive implements AutoCloseable {
                 long expected = request.getContentLengthLong();
                 if (expected > MAX_ARCHIVE_BYTES) throw new IOException("Mod archive exceeds 128 MiB");
                 try (InputStream input = request.getInputStream()) {
-                    return copy(input, expected, progress);
+                    return copyToFile(input, expected, progress);
                 }
             } finally {
                 request.disconnect();
@@ -96,7 +96,7 @@ final class DownloadArchive implements AutoCloseable {
         throw new IOException("Too many GitHub redirects");
     }
 
-    long copy(InputStream input, long expected, Progress progress) throws IOException {
+    long copyToFile(InputStream input, long expected, Progress progress) throws IOException {
         if (expected > MAX_ARCHIVE_BYTES) throw new IOException("Mod archive exceeds 128 MiB");
         long total = 0;
         long lastUpdate = 0;
@@ -125,7 +125,7 @@ final class DownloadArchive implements AutoCloseable {
         }
     }
 
-    synchronized byte[] read(long offset) throws IOException {
+    synchronized byte[] readChunk(long offset) throws IOException {
         checkCancelled();
         if (!complete) throw new IOException("Download is not complete");
         long length = file.length();

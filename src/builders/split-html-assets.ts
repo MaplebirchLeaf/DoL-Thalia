@@ -18,7 +18,7 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
     const id = attributes.match(/\bid="(script-libraries|script-sugarcube)"/)?.[1];
     const name = id ?? (source.includes('BeforeSC2.js.LICENSE.txt') ? 'before-sc2' : undefined);
     if (!name || !source.trim()) return element;
-    const file = assetName(name, 'js');
+    const file = assetFileName(name, 'js');
     assets.set(file, source);
     return `<script${attributes} src="./${file}"></script>`;
   });
@@ -33,7 +33,7 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
       if (between.trim()) throw new Error('Game style modules are no longer contiguous; refusing to reorder CSS');
     }
     const css = styles.map(style => style[1]).join('\n');
-    const file = assetName('game-styles', 'css');
+    const file = assetFileName('game-styles', 'css');
     assets.set(file, css);
     let first = true;
     html = html.replace(GAME_STYLE_PATTERN, () => {
@@ -55,6 +55,6 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
   for (const file of legacyFiles) await rm(join(outputDir, file));
 }
 
-function assetName(name: string, extension: 'css' | 'js'): string {
+function assetFileName(name: string, extension: 'css' | 'js'): string {
   return `thalia-${name}.${extension}`;
 }

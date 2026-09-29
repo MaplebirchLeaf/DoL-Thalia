@@ -98,7 +98,7 @@ def audit_html(path: Path, report: Report) -> None:
         except ValueError as error:
             report.fail(str(error))
             continue
-        if check_zip_payload(data, label, report):
+        if audit_zip_payload(data, label, report):
             valid_bundled += 1
 
     if valid_bundled == len(bundled) and bundled:
@@ -115,7 +115,7 @@ def audit_html(path: Path, report: Report) -> None:
             report.ok(f"all {len(indexed_db)} IndexedDB mod payloads pass hash and archive checks")
 
 
-def check_zip_payload(data: bytes, label: str, report: Report) -> bool:
+def audit_zip_payload(data: bytes, label: str, report: Report) -> bool:
     if not data.startswith(ZIP_LOCAL_HEADER):
         report.fail(f"{label} does not decode to a ZIP archive")
         return False
@@ -158,7 +158,7 @@ def audit_indexed_db_mod(entry: object, index: int, report: Report) -> bool:
         report.fail(f"{label} SHA-256 mismatch: {name}")
         return False
     if data.startswith(ZIP_LOCAL_HEADER):
-        return check_zip_payload(data, label, report)
+        return audit_zip_payload(data, label, report)
     # .modpack 是加密容器；这里只验证头部，无法检查其内部 ZIP。
     if data.startswith(MODPACK_MAGIC) and len(data) >= 80:
         return True

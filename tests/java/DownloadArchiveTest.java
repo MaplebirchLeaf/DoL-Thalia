@@ -49,33 +49,33 @@ public final class DownloadArchiveTest {
             // This runs with a 16 MiB Java heap: the archive must never live entirely in Java memory.
             try (DownloadArchive archive = new DownloadArchive(file)) {
                 long size = 32L * 1024 * 1024 + 19;
-                check(archive.copy(generated(size), size, (loaded, total) -> {}) == size);
+                check(archive.copyToFile(generated(size), size, (loaded, total) -> {}) == size);
                 long offset = 0;
                 int chunks = 0;
                 while (offset < size) {
-                    byte[] chunk = archive.read(offset);
+                    byte[] chunk = archive.readChunk(offset);
                     check(chunk.length <= DownloadArchive.CHUNK_BYTES);
                     check(chunk[0] == 42 && chunk[chunk.length - 1] == 42);
                     offset += chunk.length;
                     chunks++;
                 }
                 check(offset == size && chunks == 129);
-                rejects(() -> archive.read(-1));
-                rejects(() -> archive.read(size));
+                rejects(() -> archive.readChunk(-1));
+                rejects(() -> archive.readChunk(size));
             }
             check(!file.exists());
             try (DownloadArchive archive = new DownloadArchive(file)) {
-                rejects(() -> archive.copy(new ByteArrayInputStream(new byte[3]), 4, (loaded, total) -> {}));
+                rejects(() -> archive.copyToFile(new ByteArrayInputStream(new byte[3]), 4, (loaded, total) -> {}));
                 check(!file.exists());
-                rejects(() -> archive.read(0));
+                rejects(() -> archive.readChunk(0));
             }
             try (DownloadArchive archive = new DownloadArchive(file)) {
-                rejects(() -> archive.copy(generated(1), DownloadArchive.MAX_ARCHIVE_BYTES + 1L, (loaded, total) -> {}));
-                rejects(() -> archive.copy(generated(DownloadArchive.MAX_ARCHIVE_BYTES + 1L), -1, (loaded, total) -> {}));
+                rejects(() -> archive.copyToFile(generated(1), DownloadArchive.MAX_ARCHIVE_BYTES + 1L, (loaded, total) -> {}));
+                rejects(() -> archive.copyToFile(generated(DownloadArchive.MAX_ARCHIVE_BYTES + 1L), -1, (loaded, total) -> {}));
                 check(!file.exists());
             }
             try (DownloadArchive archive = new DownloadArchive(file)) {
-                rejects(() -> archive.copy(generated(4 * 1024 * 1024), -1, (loaded, total) -> archive.close()));
+                rejects(() -> archive.copyToFile(generated(4 * 1024 * 1024), -1, (loaded, total) -> archive.close()));
                 check(!file.exists());
             }
             System.out.println("Native archive: " + assertions + " assertions; 32 MiB archive with 16 MiB heap passed");
