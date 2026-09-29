@@ -1,5 +1,7 @@
 # dependencies
 node_modules/
+__pycache__/
+*.pyc
 
 # machine-local environment
 .env
@@ -24,12 +26,14 @@ input/*
 !input/
 input/game/*
 !input/game/.gitkeep
+!input/game-dolp/
+input/game-dolp/*
+!input/game-dolp/.gitkeep
 !input/mods/
 !input/mods/.gitkeep
 input/mods/**/*
 
 # DoLP variant local inputs (large packages, never committed)
-input/game-dolp/
 input/mods-dolp/
 
 !input/signing/

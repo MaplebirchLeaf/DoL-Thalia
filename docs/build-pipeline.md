@@ -49,14 +49,19 @@ APK 下载先写入应用私有临时文件，再以 256 KiB 分块传入 WebVie
 
 ## 缓存与清理
 
-- `.cache/html/`：HTML 组装的临时文件。
-- `.cache/site/vanilla-game/`：从源码编译的标准版游戏 HTML。
-- `.cache/apk/`：生成的 Cordova Android 工程。
-- `.cache/build/`：依赖安装和内嵌模组构建指纹；删除后触发重新安装校验和重建。
-- `.cache/android-toolchain/`：构建脚本下载的 Gradle。
-- `dist/`：最终构建产物。
+`.cache/` 整体是纯缓存：删除任意子目录都不会损坏仓库，构建会自行重建缺失内容。它不进入 Git，可以随时整体删除来回收空间（完整 APK 工具链可达数 GB）。
 
-这些目录均不进入 Git。完整、未限定范围的本地 `build:all` 会清理旧 ZIP 和 APK 输出；限定版本、组合或目标时会保留其他产物。
+| 目录                           | 内容                                        | 删除后                       |
+| ------------------------------ | ------------------------------------------- | ---------------------------- |
+| `.cache/build/`                | 依赖安装与内嵌模组构建指纹                  | 重新安装依赖并重建内嵌模组   |
+| `.cache/apk/`                  | 生成的 Cordova Android 工程                 | 重新创建工程并执行 `prepare` |
+| `.cache/android-toolchain/`    | 构建脚本下载的 Gradle 发行包                | 重新下载 Gradle              |
+| `.cache/gradle-user-home/`     | Gradle 依赖缓存，由 `GRADLE_USER_HOME` 指向 | 重新下载 Android 依赖        |
+| `.cache/html/`、`.cache/site/` | HTML 组装与标准版源码编译的中间产物         | 重新组装或重新编译           |
+
+`.cache/gradle-user-home/` 显式写入构建环境，因此 APK 构建不会把依赖写进用户主目录，缓存也能随 `.cache` 一并清理。
+
+`dist/` 是最终构建产物，不是缓存：完整、未限定范围的本地 `build:all` 会清理旧 ZIP 和 APK 输出；限定版本、组合或目标时会保留其他产物。
 
 ## 本地与 GitHub Actions
 

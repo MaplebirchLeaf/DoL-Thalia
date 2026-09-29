@@ -5,10 +5,12 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { platform } from 'node:process';
 import { unzipSync, zipSync } from 'fflate';
 import type { ThaliaConfig } from '../core/config';
+import { downloadFile } from '../core/download';
 import { logDone, logInfo } from '../core/log';
 import { run } from '../core/process';
 import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
 import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from '../release/utils';
+import { resizePngFile } from '../tools/png-resize';
 
 const ANDROID_PLATFORM_DIR = 'platforms/android';
 const RELEASE_UNSIGNED_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/release/app-release-unsigned.apk`;
@@ -342,12 +344,7 @@ async function writeXml(path: string, content: string): Promise<void> {
 }
 
 async function writePng(source: string, target: string, size: number): Promise<void> {
-  await mkdir(dirname(target), { recursive: true });
-  if (platform !== 'win32') {
-    await cp(source, target, { force: true });
-    return;
-  }
-  await run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve('src/tools/resize-png.ps1'), source, target, String(size)], { quiet: true });
+  await resizePngFile(source, target, size);
 }
 
 function createCordovaCommand(args: string[]): string[] {
@@ -373,6 +370,14 @@ function gradleHome(config: ThaliaConfig): string {
   return resolve('.cache/android-toolchain', `gradle-${config.apk.toolchain.gradle}`);
 }
 
+// Keep Gradle's dependency cache inside .cache so an APK build never scatters
+// hundreds of megabytes into the developer's home directory. Without this the
+// location silently depends on the machine, and the cache cannot be cleaned
+// together with the rest of .cache.
+function gradleUserHome(): string {
+  return resolve('.cache/gradle-user-home');
+}
+
 function findGradleExecutable(config: ThaliaConfig): string {
   const executable = platform === 'win32' ? 'gradle.bat' : 'gradle';
   return join(gradleHome(config), 'bin', executable);
@@ -396,13 +401,6 @@ async function ensureGradle(config: ThaliaConfig): Promise<void> {
     await writeFile(output, data);
   }
   if (platform !== 'win32') await chmod(executable, 0o755);
-}
-
-async function downloadFile(url: string, output: string): Promise<void> {
-  await mkdir(dirname(output), { recursive: true });
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
-  await writeFile(output, new Uint8Array(await response.arrayBuffer()));
 }
 
 export function apkBuildStatus(config: ThaliaConfig): ApkBuildStatus {
@@ -444,6 +442,7 @@ function createAndroidBuildEnvironment(config?: ThaliaConfig): Record<string, st
   return {
     ANDROID_HOME: sdkPath,
     ANDROID_SDK_ROOT: sdkPath,
+    GRADLE_USER_HOME: gradleUserHome(),
     JAVA_HOME: javaHome,
     PATH: prependPathEntries(pathAdditions),
     Path: prependPathEntries(pathAdditions)

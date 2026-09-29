@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
+import { downloadFile, githubHeaders } from '../core/download';
 import { logWarn } from '../core/log';
 
 interface GitHubRelease {
@@ -123,14 +124,6 @@ async function fetchRelease(repository: string, tag: string | undefined): Promis
   return (await response.json()) as GitHubRelease;
 }
 
-function githubHeaders(): Record<string, string> {
-  return {
-    Accept: 'application/vnd.github+json',
-    ...(Bun.env.GITHUB_TOKEN ? { Authorization: `Bearer ${Bun.env.GITHUB_TOKEN}` } : {}),
-    'User-Agent': 'DoL-Thalia'
-  };
-}
-
 function selectAsset(release: GitHubRelease, keyword: string, extensions: string[], gameVersion: string): SelectedAsset {
   const matches = filterAssets(release.assets || [], keyword, extensions);
   const versionMatches = matches.filter(asset => asset.name?.includes(gameVersion));
@@ -181,15 +174,7 @@ async function downloadAsset(asset: SelectedAsset, outputDir: string): Promise<v
   const output = join(outputDir, asset.name);
   if (await hasSameSize(output, asset.size)) return;
 
-  await downloadFile(asset.browser_download_url, output);
-}
-
-async function downloadFile(url: string, output: string): Promise<void> {
-  const response = await fetch(url, {
-    headers: Bun.env.GITHUB_TOKEN ? { Authorization: `Bearer ${Bun.env.GITHUB_TOKEN}` } : undefined
-  });
-  if (!response.ok) throw new Error(`下载失败（${response.status}）：${url}`);
-  await writeFile(output, new Uint8Array(await response.arrayBuffer()));
+  await downloadFile(asset.browser_download_url, output, { githubAuth: true, label: asset.name });
 }
 
 async function hasSameSize(path: string, expectedSize: number | undefined): Promise<boolean> {

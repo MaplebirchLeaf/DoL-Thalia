@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { downloadFile } from '../core/download';
 import { dirname, join, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { extractZipSafe } from '../core/zip';
@@ -50,17 +51,6 @@ async function chmodBundledTweego(root: string): Promise<void> {
     const path = join(root, 'devTools', 'tweego', file);
     if (existsSync(path)) await chmod(path, 0o755);
   }
-}
-
-async function downloadFile(url: string, output: string): Promise<void> {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'DoL-Thalia'
-    }
-  });
-  if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
-  await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, new Uint8Array(await response.arrayBuffer()));
 }
 
 function releaseArchiveUrl(version: string): string {
