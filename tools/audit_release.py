@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+import hashlib
 import io
 import json
 import re
@@ -30,6 +31,7 @@ INDEXED_DB_MOD_PATTERN = re.compile(r"window\.modDataValueZipListIndexDB\s*=\s*(
 
 APK_SIGNATURE_BLOCK_MAGIC = b"APK Sig Block 42"
 ZIP_LOCAL_HEADER = b"PK\x03\x04"
+MODPACK_MAGIC = b"JeremieModLoader"
 
 
 @dataclass
@@ -66,6 +68,8 @@ def load_json_assignment(html: str, pattern: re.Pattern[str], label: str) -> lis
 
 
 def decode_base64(payload: str, label: str) -> bytes:
+    if not isinstance(payload, str):
+        raise ValueError(f"{label} is not a base64 string")
     try:
         return base64.b64decode(payload, validate=True)
     except (binascii.Error, ValueError) as error:
@@ -90,34 +94,75 @@ def audit_html(path: Path, report: Report) -> None:
         label = f"bundled mod #{index + 1}"
         try:
             data = decode_base64(payload, label)
-        except (TypeError, ValueError) as error:
+        except ValueError as error:
             report.fail(str(error))
             continue
-        if not data.startswith(ZIP_LOCAL_HEADER):
-            report.fail(f"{label} does not decode to a ZIP archive")
-            continue
-        try:
-            with zipfile.ZipFile(io.BytesIO(data)) as archive:
-                names = archive.namelist()
-                if not names:
-                    report.fail(f"{label} ZIP archive is empty")
-                    continue
-                corrupt = archive.testzip()
-                if corrupt is not None:
-                    report.fail(f"{label} ZIP member failed CRC check: {corrupt}")
-                    continue
-        except zipfile.BadZipFile:
-            report.fail(f"{label} is not a readable ZIP archive")
-            continue
-        valid_bundled += 1
+        if check_zip_payload(data, label, report):
+            valid_bundled += 1
 
     if valid_bundled == len(bundled) and bundled:
         report.ok(f"all {len(bundled)} bundled mod ZIP payloads decode and pass CRC")
 
-    if indexed_db:
-        report.note(f"{len(indexed_db)} IndexedDB mod entries present")
-    else:
+    if not indexed_db:
         report.note("no IndexedDB mod entries (expected for a preset without extra mods)")
+    else:
+        valid_indexed_db = sum(
+            audit_indexed_db_mod(entry, index, report)
+            for index, entry in enumerate(indexed_db, start=1)
+        )
+        if valid_indexed_db == len(indexed_db):
+            report.ok(f"all {len(indexed_db)} IndexedDB mod payloads pass hash and archive checks")
+
+
+def check_zip_payload(data: bytes, label: str, report: Report) -> bool:
+    if not data.startswith(ZIP_LOCAL_HEADER):
+        report.fail(f"{label} does not decode to a ZIP archive")
+        return False
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            if not archive.namelist():
+                report.fail(f"{label} ZIP archive is empty")
+                return False
+            corrupt = archive.testzip()
+            if corrupt is not None:
+                report.fail(f"{label} ZIP member failed CRC check: {corrupt}")
+                return False
+    except zipfile.BadZipFile:
+        report.fail(f"{label} is not a readable ZIP archive")
+        return False
+    return True
+
+
+def audit_indexed_db_mod(entry: object, index: int, report: Report) -> bool:
+    label = f"IndexedDB mod #{index}"
+    if not isinstance(entry, dict):
+        report.fail(f"{label} is not an object")
+        return False
+    name, parts, expected_hash = (entry.get(key) for key in ("name", "dataParts", "hash"))
+    if not isinstance(name, str) or not name or not isinstance(parts, list) or not parts:
+        report.fail(f"{label} has invalid name or dataParts")
+        return False
+    if not isinstance(expected_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+        report.fail(f"{label} has an invalid SHA-256 hash")
+        return False
+    if not all(isinstance(part, str) for part in parts):
+        report.fail(f"{label} contains a non-string data part")
+        return False
+    try:
+        data = decode_base64("".join(parts), label)
+    except ValueError as error:
+        report.fail(str(error))
+        return False
+    if hashlib.sha256(data).hexdigest() != expected_hash:
+        report.fail(f"{label} SHA-256 mismatch: {name}")
+        return False
+    if data.startswith(ZIP_LOCAL_HEADER):
+        return check_zip_payload(data, label, report)
+    # .modpack 是加密容器；这里只验证头部，无法检查其内部 ZIP。
+    if data.startswith(MODPACK_MAGIC) and len(data) >= 80:
+        return True
+    report.fail(f"{label} is neither a ZIP archive nor a ModPack: {name}")
+    return False
 
 
 def audit_zip(path: Path, report: Report) -> None:

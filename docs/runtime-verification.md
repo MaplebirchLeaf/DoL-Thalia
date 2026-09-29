@@ -16,7 +16,7 @@ bun run audit
 
 `bun run audit` 调用 `tools/audit_release.py`（只需 Python 3 标准库，无第三方依赖），以只读方式核对 `dist/` 中的成品，验证构建成功本身不能证明的不变量：
 
-- HTML：内嵌基础模组确实以合法 base64 编码，且每份载荷都能作为 ZIP 解压并通过 CRC 校验。
+- HTML：内嵌基础模组以合法 base64 编码，每份载荷都能作为 ZIP 解压并通过 CRC 校验；额外模组的分片、SHA-256 和容器格式也会核对。加密 `.modpack` 只能检查容器头和哈希，不能解密验证内部内容。
 - ZIP：包体可读、全部成员通过 CRC、存在 HTML 入口。
 - APK：可解析为 ZIP、包含 `AndroidManifest.xml` 与 `classes.dex`、存在 v2/v3 签名块、未压缩条目满足 4 字节对齐。签名块存在性检查不等同于密码学签名验证。
 

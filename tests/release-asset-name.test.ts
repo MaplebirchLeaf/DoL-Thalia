@@ -42,7 +42,7 @@ test('site download links resolve to names the publisher actually creates', () =
 });
 
 test('DoLP links never contain an edition marker the publisher does not emit', () => {
-  for (const preset of ['dolp-vanilla', 'chs']) {
+  for (const preset of ['vanilla', 'chs']) {
     const file = releaseAssetUrl('dolp-0.778-0914', preset, 'zip').split('/').pop()!;
     expect(file.startsWith('DoL-Thalia-dolp-')).toBe(false);
     expect(file).toBe(publishedName('0.778', preset, 'zip', '0914'));
