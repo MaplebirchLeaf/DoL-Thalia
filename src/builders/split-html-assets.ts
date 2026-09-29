@@ -35,12 +35,9 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
     const css = styles.map(style => style[1]).join('\n');
     const file = assetFileName('game-styles', 'css');
     assets.set(file, css);
-    let first = true;
-    html = html.replace(GAME_STYLE_PATTERN, () => {
-      if (!first) return '';
-      first = false;
-      return `<link rel="stylesheet" href="./${file}">`;
-    });
+    const first = styles[0];
+    const last = styles[styles.length - 1];
+    html = `${html.slice(0, first.index)}<link rel="stylesheet" href="./${file}">${html.slice(last.index! + last[0].length)}`;
   }
 
   const legacyFiles = [...new Set(html.match(LEGACY_ASSET_PATTERN) ?? [])];

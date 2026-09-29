@@ -13,7 +13,7 @@ test('splits ordinary scripts and adjacent game CSS while retaining Twine data a
       '<head><script>window.modDataValueZipList = ["zip"];</script>' +
         '<script>/*! BeforeSC2.js.LICENSE.txt */ window.beforeSc2 = true;</script>' +
         '<script id="script-libraries" type="text/javascript">window.library = true;</script>' +
-        '<style id="style-module-base" type="text/css">.base { color: red }</style>\n' +
+        '<style id="style-module-base" type="text/css">.base { color: red }</style>\n\n\n' +
         '<style id="style-module-theme" type="text/css">.theme { color: blue }</style>' +
         '<style id="twine-user-stylesheet" type="text/twine-css">.twine { color: green }</style>' +
         '</head><body><script role="script" id="twine-user-script" type="text/twine-javascript">window.game = true;</script>' +
@@ -28,6 +28,7 @@ test('splits ordinary scripts and adjacent game CSS while retaining Twine data a
     expect(html).not.toContain('window.beforeSc2 = true');
     expect(html).not.toContain('window.sugarcube = true');
     expect(html).not.toContain('.base { color: red }');
+    expect(html).toContain('<link rel="stylesheet" href="./thalia-game-styles.css"><style id="twine-user-stylesheet"');
     const files = await readdir(root);
     expect(files.filter(file => file.endsWith('.js'))).toHaveLength(3);
     expect(files.filter(file => file.endsWith('.css'))).toHaveLength(1);
