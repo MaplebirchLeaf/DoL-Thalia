@@ -17,6 +17,7 @@ import binascii
 import hashlib
 import io
 import json
+import mmap
 import re
 import struct
 import sys
@@ -189,7 +190,7 @@ def audit_zip(path: Path, report: Report) -> None:
         report.fail("package ZIP is not readable")
 
 
-def read_apk_signing_block(data: bytes) -> tuple[bool, int | None]:
+def read_apk_signing_block(data: bytes | mmap.mmap) -> tuple[bool, int | None]:
     """Return (has_signing_block, central_directory_offset).
 
     Layout immediately before the central directory:
@@ -233,8 +234,7 @@ def read_apk_signing_block(data: bytes) -> tuple[bool, int | None]:
 
 def audit_apk(path: Path, report: Report) -> None:
     print(f"APK  {path}")
-    data = path.read_bytes()
-    report.note(f"{len(data):,} bytes")
+    report.note(f"{path.stat().st_size:,} bytes")
 
     if not zipfile.is_zipfile(path):
         report.fail("APK is not a readable ZIP archive")
@@ -253,27 +253,28 @@ def audit_apk(path: Path, report: Report) -> None:
     else:
         report.ok("classes.dex present")
 
-    signed, _ = read_apk_signing_block(data)
-    if signed:
-        report.ok("APK signing block present (v2+ signature)")
-    else:
-        report.fail("APK signing block missing: the package is not v2/v3 signed")
+    # 映射文件以便随机读取 ZIP 头，避免把整个 APK 复制进 Python 堆内存。
+    with path.open("rb") as apk_file, mmap.mmap(apk_file.fileno(), 0, access=mmap.ACCESS_READ) as data:
+        signed, _ = read_apk_signing_block(data)
+        if signed:
+            report.ok("APK signing block present (v2+ signature)")
+        else:
+            report.fail("APK signing block missing: the package is not v2/v3 signed")
 
-    # zipalign only guarantees alignment for uncompressed entries; deflated
-    # members carry no such requirement, so only STORED entries are checked.
-    misaligned: list[str] = []
-    stored = 0
-    with zipfile.ZipFile(path) as archive:
-        for info in archive.infolist():
-            if info.compress_type != zipfile.ZIP_STORED:
-                continue
-            stored += 1
-            header_offset = info.header_offset
-            # 30 byte local header + file name length + extra field length
-            name_len, extra_len = struct.unpack_from("<HH", data, header_offset + 26)
-            data_offset = header_offset + 30 + name_len + extra_len
-            if data_offset % 4 != 0:
-                misaligned.append(info.filename)
+        # zipalign 只要求未压缩条目对齐。
+        misaligned: list[str] = []
+        stored = 0
+        with zipfile.ZipFile(path) as archive:
+            for info in archive.infolist():
+                if info.compress_type != zipfile.ZIP_STORED:
+                    continue
+                stored += 1
+                header_offset = info.header_offset
+                # 本地头 30 字节，后接文件名和 extra 字段。
+                name_len, extra_len = struct.unpack_from("<HH", data, header_offset + 26)
+                data_offset = header_offset + 30 + name_len + extra_len
+                if data_offset % 4 != 0:
+                    misaligned.append(info.filename)
     if misaligned:
         preview = ", ".join(misaligned[:3])
         report.fail(f"{len(misaligned)} uncompressed entries are not 4-byte aligned: {preview}")
