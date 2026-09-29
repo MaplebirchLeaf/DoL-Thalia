@@ -19,17 +19,18 @@ export function releaseGameVersion(version: SiteVersion): string {
 }
 
 /**
- * GitHub release asset URL. File name contract (shared with publish naming):
- *   standard: DoL-Thalia-<game>-<preset>-<YYYY>.zip
- *   dolp:     DoL-Thalia-dolp-<game>-<preset>-<YYYY>.zip
- * with tag v<stored version>.
+ * GitHub release asset URL, with tag v<stored version>.
+ *
+ * The file name follows the same contract the publish pipeline uses
+ * (buildReleaseAssetName): DoL-Thalia-<game>-<preset>[-<YYYY>].<ext>
+ * The DoLP edition marker is stripped from the game version and is NOT
+ * re-inserted: published assets carry only the game version token.
+ * Keep aligned with tests/release-asset-name.test.ts.
  */
 export function releaseAssetUrl(version: SiteVersion, presetName: string, extension: 'apk' | 'zip'): string {
   const gameVersion = releaseGameVersion(version);
   const date = version.match(/-(\d{4})$/)?.[1];
-  const parts = ['DoL-Thalia'];
-  if (releaseEdition(version) === 'dolp') parts.push('dolp');
-  parts.push(gameVersion, presetName);
+  const parts = ['DoL-Thalia', gameVersion, presetName];
   if (date) parts.push(date);
   const file = parts.join('-') + `.${extension}`;
   return `${REPOSITORY_RELEASES}/download/${releaseTag(version)}/${file}`;

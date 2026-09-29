@@ -4,14 +4,20 @@ export interface LocalizedSiteCopy {
   backTop: string;
   collapse: string;
   download: string;
+  downloadApk: string;
+  downloadZip: string;
   editionStandard: string;
   editionDolp: string;
   expand: string;
   footer: string;
   heroStatement: string;
   heroTitle: string;
+  languageSwitchLabel: string;
+  navLabel: string;
   noVersions: string;
   onlinePlay: string;
+  siteName: string;
+  versionListHint: string;
   viewDoLDownloads: string;
   viewDoLPDownloads: string;
   selectVersion: string;
@@ -33,14 +39,20 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     backTop: '返回顶部',
     collapse: '收起',
     download: 'GitHub 下载',
+    downloadApk: 'APK 下载',
+    downloadZip: 'ZIP 下载',
     editionStandard: 'DoL',
     editionDolp: 'DoLP',
     expand: '展开',
     footer: 'Powered by Vue & Vite',
     heroStatement: '本站是 <a href="https://github.com/MaplebirchLeaf/DoL-Thalia">DoL-Thalia</a> 的第三方发布页，并非 DoL 或汉化组官方发布网站。',
     heroTitle: 'DoL-Thalia 整合包发布站',
+    languageSwitchLabel: '切换语言',
+    navLabel: '主导航',
     noVersions: '还没有可用版本。',
     onlinePlay: '在线游玩',
+    siteName: 'DoL-Thalia 整合包发布站',
+    versionListHint: '展开查看该版本的全部下载配置',
     viewDoLDownloads: '查看 DoL 下载',
     viewDoLPDownloads: '查看 DoLP 下载',
     selectVersion: '展开下载列表',
@@ -107,6 +119,8 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     backTop: 'Back to top',
     collapse: 'Collapse',
     download: 'Download',
+    downloadApk: 'Download APK',
+    downloadZip: 'Download ZIP',
     editionStandard: 'DoL',
     editionDolp: 'DoLP',
     expand: 'Expand',
@@ -114,8 +128,12 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     heroStatement:
       'This is an unofficial release page for <a href="https://github.com/MaplebirchLeaf/DoL-Thalia">DoL-Thalia</a>. It is not an official website for DoL or the Chinese localization project.',
     heroTitle: 'DoL-Thalia Release Hub',
+    languageSwitchLabel: 'Switch language',
+    navLabel: 'Main navigation',
     noVersions: 'No release versions are available yet.',
     onlinePlay: 'Play online',
+    siteName: 'DoL-Thalia Release Hub',
+    versionListHint: 'Expand to see every package for this version',
     viewDoLDownloads: 'Browse DoL downloads',
     viewDoLPDownloads: 'Browse DoLP downloads',
     selectVersion: 'Show downloads',

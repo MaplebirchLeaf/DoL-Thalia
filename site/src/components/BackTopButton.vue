@@ -10,5 +10,7 @@ defineEmits<{
 </script>
 
 <template>
-  <button v-if="visible" class="back-top" type="button" :aria-label="label" @click="$emit('backTop')">Top</button>
+  <button v-if="visible" class="back-top" type="button" :aria-label="label" :title="label" @click="$emit('backTop')">
+    <span aria-hidden="true">↑</span>
+  </button>
 </template>

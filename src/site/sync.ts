@@ -21,6 +21,33 @@ export interface SiteRelease {
   presets?: string[];
 }
 
+/**
+ * Serialise generated site data the way the committed files are laid out.
+ *
+ * JSON.stringify always breaks arrays across lines, while oxfmt preserves the
+ * line breaks it is given, so the committed data keeps short arrays on one line.
+ * Emitting the expanded form made every `bun run site:build` leave the tree in a
+ * state that fails `bun run check`, so values are rendered explicitly here:
+ * string arrays stay inline, objects keep their properties on separate lines.
+ */
+function serializeSiteData(data: unknown): string {
+  const rows = (Array.isArray(data) ? data : [data]).map(row => renderRow(row));
+  return `[\n${rows.join(',\n')}\n]\n`;
+}
+
+function renderRow(row: unknown): string {
+  const entries = Object.entries(row as Record<string, unknown>).map(([key, value]) => {
+    if (Array.isArray(value)) return `    "${key}": ${renderInlineArray(value)}`;
+    return `    "${key}": ${JSON.stringify(value)}`;
+  });
+  return `  {\n${entries.join(',\n')}\n  }`;
+}
+
+function renderInlineArray(values: unknown[]): string {
+  if (values.length === 0) return '[]';
+  return `[${values.map(value => JSON.stringify(value)).join(', ')}]`;
+}
+
 const RELEASE_PRESETS_SITE_DATA = 'site/data/release.json';
 const RELEASE_VERSIONS_SITE_DATA = 'site/data/versions.json';
 const PLAY_INDEX = 'site/public/play/index.html';
@@ -135,5 +162,5 @@ async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
 async function writeJson(path: string, data: unknown): Promise<void> {
   const output = resolve(path);
   await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  await writeFile(output, serializeSiteData(data), 'utf8');
 }
