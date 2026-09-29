@@ -49,28 +49,27 @@ git submodule update --init vendor/sugarcube-2-ModLoader
 bun install --frozen-lockfile
 ```
 
-Prepare the local toolchain once, then create a quick development build:
+Prepare the local toolchain once, then build HTML:
 
 ```bash
 bun run build:env
-bun run build:local
+bun run build:html
 ```
 
 The standard game can be built from a ZIP placed under `input/game/`. When no matching local ZIP exists, the standard build can fetch and compile the configured upstream game version. DoLP packages must be placed under `input/game-dolp/`.
 
 ## Commands
 
-| Command               | Purpose                                                             |
-| --------------------- | ------------------------------------------------------------------- |
-| `bun run build:env`   | Prepare SugarCube, ModLoader, story format, tools, and bundled mods |
-| `bun run build:local` | Build a fast local HTML package with the selected preset            |
-| `bun run build:html`  | Build a compressed HTML package for a selected version and preset   |
-| `bun run build:zip`   | Run a complete release build and produce ZIP files                  |
-| `bun run build:apk`   | Run a complete release build and produce APK files                  |
-| `bun run build:all`   | Build HTML, ZIP, and APK release targets                            |
-| `bun run check`       | Run TypeScript, lint, and formatting checks                         |
-| `bun run site:dev`    | Start the release site locally                                      |
-| `bun run site:build`  | Build the release site                                              |
+| Command              | Purpose                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `bun run build:env`  | Prepare SugarCube, ModLoader, story format, tools, and bundled mods |
+| `bun run build:html` | Build a compressed HTML package for a selected version and preset   |
+| `bun run build:zip`  | Run a complete release build and produce ZIP files                  |
+| `bun run build:apk`  | Run a complete release build and produce APK files                  |
+| `bun run build:all`  | Build HTML, ZIP, and APK release targets                            |
+| `bun run check`      | Run TypeScript, lint, and formatting checks                         |
+| `bun run site:dev`   | Start the release site locally                                      |
+| `bun run site:build` | Build the release site                                              |
 
 Examples:
 
@@ -78,7 +77,7 @@ Examples:
 bun run build:html --preset=chs --version=0.5.12.13
 bun run build:zip --preset=chs --version=0.5.12.13
 bun run build:apk --preset=chs --version=0.5.12.13
-bun run build:local --game=dolp --pure
+bun run build:html --game=dolp --pure
 ```
 
 See the [documentation index](docs/README.md) for commands, the build pipeline, private mod sources, and Android SDK setup.

@@ -12,25 +12,25 @@ bun run build:env
 
 | 想做什么           | 命令                                                            | 产物                                             |
 | ------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
-| 快速测试当前整合包 | `bun run build:local`                                           | `dist/html/`；复用已准备的工具链，跳过压缩       |
+| 快速测试当前整合包 | `bun run build:html --fast`                                     | `dist/html/`；复用已准备的工具链，跳过压缩       |
 | 检查压缩后的 HTML  | `bun run build:html`                                            | `dist/html/`；复用已准备的工具链，压缩 SugarCube |
 | 构建发布包         | `bun run build:zip` / `bun run build:apk` / `bun run build:all` | ZIP、APK 或两者；按需准备依赖                    |
 
-`build:local` 和 `build:html` 使用同一套组合与资源，只差压缩。两者都会把普通 JS/CSS 拆到 HTML 同目录；测试时要保留整个 `dist/html/`。ZIP 仍使用单文件 HTML。
+`build:html` 默认压缩 SugarCube；测试时可以加 `--fast` 跳过压缩。普通 JS/CSS 会拆到 HTML 同目录，因此要保留整个 `dist/html/`。ZIP 仍使用单文件 HTML。
 
 默认游戏版本和组合名在 `thalia.config.toml` 的 `[game]` 中。组合包含哪些模组由 `input/modList.json` 决定；`[mod_sources.*]` 只负责定位或下载模组文件。`modList.json` 可以使用 `{ "base_mods": [...], "presets": [...] }`：`base_mods` 自动加入每个组合，组合内的 `mods` 只列额外模组。旧数组格式仍可用。要加入自己创作的模组，先把 `模组名-游戏版本-版本号.mod.zip` 放进 `input/mods/<游戏版本>/`，再将模组名加入 `base_mods` 或指定组合。没有可供 CI 下载的资源时，将该组合及资源配置留在本地，不加入公开发布配置。
 
 常用参数：
 
 ```bash
-bun run build:local --preset=chs --version=0.5.12.13
-bun run build:local --no-input-mods
+bun run build:html --fast --preset=chs --version=0.5.12.13
+bun run build:html --fast --no-input-mods
 bun run build:html --pure
 bun run build:zip --preset=chs --version=0.5.12.13
 bun run build:all --game=dolp --version=0.778
 ```
 
-`--preset` 选择 `input/modList.json` 的组合；`--version` 覆盖游戏版本；`--game=dolp` 选择 DoLP 输入和模组目录。`--no-input-mods` 保留 ModLoader 和内嵌基础模组，但不加入 `input/mods/` 中的组合模组；`--pure` 连 ModLoader 和所有模组也不注入。两者都不读取组合模组文件。快速命令默认跳过准备阶段；改动 SugarCube、ModLoader 或内嵌基础模组后，先运行 `bun run build:env`。
+`--preset` 选择 `input/modList.json` 的组合；`--version` 覆盖游戏版本；`--game=dolp` 选择 DoLP 输入和模组目录。`--no-input-mods` 保留 ModLoader 和内嵌基础模组，但不加入 `input/mods/` 中的组合模组；`--pure` 连 ModLoader 和所有模组也不注入。两者都不读取组合模组文件。`build:html` 默认跳过准备阶段；改动 SugarCube、ModLoader 或内嵌基础模组后，先运行 `bun run build:env`。
 
 ## 其他入口
 
