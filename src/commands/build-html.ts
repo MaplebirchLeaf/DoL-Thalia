@@ -17,7 +17,7 @@ options.html.releasePreset = preset;
 
 if (options.prepare !== 'skip') {
   await prepareLocalBuild(buildConfig, options.prepare);
-  if (options.html.modloader !== false && !options.prepareExplicit) await syncModSources(buildConfig, preset.mods);
+  if (options.html.modloader !== false && options.html.embedIndexDBMods !== false && !options.prepareExplicit) await syncModSources(buildConfig, preset.mods);
 }
 
 await buildHtml(buildConfig, options.html);

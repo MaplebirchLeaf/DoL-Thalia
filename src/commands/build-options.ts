@@ -20,6 +20,7 @@ export function parseBuildHtmlCommandOptions(args: string[]): BuildHtmlCommandOp
   const preset = readOption(args, ['--preset=', '--config=']);
   const version = readOption(args, ['--version=']);
   if (args.includes('--fast')) html.minify = false;
+  if (args.includes('--no-input-mods')) html.embedIndexDBMods = false;
 
   if (prepare !== 'skip' && !prepare.steps) prepare = { ...prepare, steps: LOCAL_PREPARE_STEPS };
 

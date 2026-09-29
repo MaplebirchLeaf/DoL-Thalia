@@ -24,12 +24,13 @@ bun run build:env
 
 ```bash
 bun run build:local --preset=chs --version=0.5.12.13
+bun run build:local --no-input-mods
 bun run build:html --pure
 bun run build:zip --preset=chs --version=0.5.12.13
 bun run build:all --game=dolp --version=0.778
 ```
 
-`--preset` 选择 `input/modList.json` 的组合；`--version` 覆盖游戏版本；`--game=dolp` 选择 DoLP 输入和模组目录。`--pure` 只用于 HTML 构建，表示不注入 ModLoader 和任何模组，与组合名称无关。快速命令默认跳过准备阶段；改动 SugarCube、ModLoader 或内嵌基础模组后，先运行 `bun run build:env`。
+`--preset` 选择 `input/modList.json` 的组合；`--version` 覆盖游戏版本；`--game=dolp` 选择 DoLP 输入和模组目录。`--no-input-mods` 保留 ModLoader 和内嵌基础模组，但不加入 `input/mods/` 中的组合模组；`--pure` 连 ModLoader 和所有模组也不注入。两者都不读取组合模组文件。快速命令默认跳过准备阶段；改动 SugarCube、ModLoader 或内嵌基础模组后，先运行 `bun run build:env`。
 
 ## 其他入口
 
