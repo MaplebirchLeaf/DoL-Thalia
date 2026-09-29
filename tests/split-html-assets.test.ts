@@ -33,8 +33,8 @@ test('splits ordinary scripts and adjacent game CSS while retaining Twine data a
     expect(files.filter(file => file.endsWith('.css'))).toHaveLength(1);
     const css = await readFile(join(root, files.find(file => file.endsWith('.css'))!), 'utf8');
     expect(css.indexOf('.base')).toBeLessThan(css.indexOf('.theme'));
-    expect(html.indexOf('before-sc2-')).toBeLessThan(html.indexOf('script-libraries-'));
-    expect(html.indexOf('script-libraries-')).toBeLessThan(html.indexOf('script-sugarcube-'));
+    expect(html.indexOf('thalia-before-sc2.js')).toBeLessThan(html.indexOf('thalia-script-libraries.js'));
+    expect(html.indexOf('thalia-script-libraries.js')).toBeLessThan(html.indexOf('thalia-script-sugarcube.js'));
 
     await splitHtmlAssets(path);
     expect(await readdir(root)).toEqual(files);
@@ -52,6 +52,22 @@ test('refuses to merge game styles separated by other content', async () => {
     await expect(splitHtmlAssets(path)).rejects.toThrow('no longer contiguous');
     expect(await readFile(path, 'utf8')).toBe(html);
     expect(await readdir(root)).toEqual(['index.html']);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('migrates existing hashed asset references to stable names', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'thalia-split-html-'));
+  const path = join(root, 'index.html');
+  const oldFile = 'thalia-script-libraries-123456abcdef.js';
+  try {
+    await writeFile(path, `<script id="script-libraries" src="./${oldFile}"></script>`);
+    await writeFile(join(root, oldFile), 'window.library = true;');
+    await splitHtmlAssets(path);
+    expect(await readFile(path, 'utf8')).toContain('src="./thalia-script-libraries.js"');
+    expect(await readFile(join(root, 'thalia-script-libraries.js'), 'utf8')).toBe('window.library = true;');
+    expect((await readdir(root)).sort()).toEqual(['index.html', 'thalia-script-libraries.js']);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

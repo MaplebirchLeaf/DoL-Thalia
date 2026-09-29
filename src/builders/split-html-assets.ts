@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 const SCRIPT_PATTERN = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
 const GAME_STYLE_PATTERN = /<style\s+id="style-module-[^"]+"\s+type="text\/css"\s*>([\s\S]*?)<\/style\s*>/gi;
+const LEGACY_ASSET_PATTERN = /thalia-(before-sc2|script-libraries|script-sugarcube|game-styles)-[a-f0-9]{12}\.(js|css)/g;
 
 /**
  * 仅拆分构建完成后的普通资源。Twine 的用户脚本、用户样式和模组数据仍须留在 HTML 中，
@@ -18,7 +18,7 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
     const id = attributes.match(/\bid="(script-libraries|script-sugarcube)"/)?.[1];
     const name = id ?? (source.includes('BeforeSC2.js.LICENSE.txt') ? 'before-sc2' : undefined);
     if (!name || !source.trim()) return element;
-    const file = assetName(name, 'js', source);
+    const file = assetName(name, 'js');
     assets.set(file, source);
     return `<script${attributes} src="./${file}"></script>`;
   });
@@ -33,7 +33,7 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
       if (between.trim()) throw new Error('Game style modules are no longer contiguous; refusing to reorder CSS');
     }
     const css = styles.map(style => style[1]).join('\n');
-    const file = assetName('game-styles', 'css', css);
+    const file = assetName('game-styles', 'css');
     assets.set(file, css);
     let first = true;
     html = html.replace(GAME_STYLE_PATTERN, () => {
@@ -43,12 +43,18 @@ export async function splitHtmlAssets(htmlPath: string): Promise<void> {
     });
   }
 
+  const legacyFiles = [...new Set(html.match(LEGACY_ASSET_PATTERN) ?? [])];
+  for (const legacyFile of legacyFiles) {
+    const file = legacyFile.replace(LEGACY_ASSET_PATTERN, 'thalia-$1.$2');
+    assets.set(file, await readFile(join(outputDir, legacyFile), 'utf8'));
+    html = html.replaceAll(legacyFile, file);
+  }
   if (html === original) return;
   for (const [file, content] of assets) await writeFile(join(outputDir, file), content, 'utf8');
   await writeFile(htmlPath, html, 'utf8');
+  for (const file of legacyFiles) await rm(join(outputDir, file));
 }
 
-function assetName(name: string, extension: 'css' | 'js', content: string): string {
-  const hash = createHash('sha256').update(content).digest('hex').slice(0, 12);
-  return `thalia-${name}-${hash}.${extension}`;
+function assetName(name: string, extension: 'css' | 'js'): string {
+  return `thalia-${name}.${extension}`;
 }
