@@ -14,16 +14,16 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 
 ## 输入来源
 
-| 输入                 | 默认位置或来源                               |
-| -------------------- | -------------------------------------------- |
-| 标准版游戏 ZIP       | `input/game/`                                |
-| DoLP 游戏 ZIP        | `input/game-dolp/`                           |
-| 外部模组缓存         | `input/mods/<version>/`                      |
-| DoLP 外部模组缓存    | `input/mods-dolp/<version>/`                 |
-| 发布组合定义         | `input/modList.json`                         |
-| ModLoader 与基础模组 | `vendor/sugarcube-2-ModLoader` Git submodule |
-| SugarCube            | `thalia.config.toml` 中配置的上游仓库        |
-| 可下载的外部模组     | `[mod_sources.*]`                            |
+| 输入                 | 默认位置或来源                                              |
+| -------------------- | ----------------------------------------------------------- |
+| 标准版游戏 ZIP       | `input/game/`                                               |
+| DoLP 游戏 ZIP        | `input/game-dolp/`                                          |
+| 外部模组缓存         | `input/mods/<version>/`                                     |
+| DoLP 外部模组缓存    | `input/mods-dolp/<version>/`                                |
+| 发布组合定义         | `input/modList.json`；可用 `base_mods` 声明各组合共享的模组 |
+| ModLoader 与基础模组 | `vendor/sugarcube-2-ModLoader` Git submodule                |
+| SugarCube            | `thalia.config.toml` 中配置的上游仓库                       |
+| 可下载的外部模组     | `[mod_sources.*]`                                           |
 
 `input/game/`、`input/game-dolp/`、`input/mods/`、`input/mods-dolp/` 和 `input/signing/` 都是本地私有输入，不会提交到 Git。标准版缺少匹配的本地游戏 ZIP 时，构建器可以下载并编译配置中的上游版本；其他游戏变体仍需要准备相应输入。
 

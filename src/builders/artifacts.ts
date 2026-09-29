@@ -8,7 +8,7 @@ import type { ThaliaConfig } from '../core/config';
 import { downloadFile } from '../core/download';
 import { logDone, logInfo } from '../core/log';
 import { run } from '../core/process';
-import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
+import { type ReleasePreset, readReleasePreset } from '../release/presets';
 import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from '../release/utils';
 import { resizePngFile } from '../tools/png-resize';
 import { splitHtmlAssets } from './split-html-assets';
@@ -43,7 +43,7 @@ export interface ApkBuildStatus {
 export async function buildPlayerZip(config: ThaliaConfig, releasePreset?: ReleasePreset): Promise<void> {
   const htmlDir = dirname(resolve(config.paths.output_html));
   const outputZipDir = dirname(resolve(config.paths.output_zip));
-  const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+  const preset = releasePreset ?? (await readReleasePreset(config.game.default_mod_list));
   const releaseDate = buildReleaseDate(config.game.release_date ?? config.game.version);
   if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   await mkdir(outputZipDir, { recursive: true });
@@ -60,7 +60,7 @@ export async function buildApk(config: ThaliaConfig, releasePreset?: ReleasePres
   const projectDir = resolve(config.paths.cordova_project);
   const androidProjectDir = join(projectDir, ANDROID_PLATFORM_DIR);
   const outputDir = resolve(config.paths.output_apk_dir);
-  const preset = releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+  const preset = releasePreset ?? (await readReleasePreset(config.game.default_mod_list));
   const releaseDate = buildReleaseDate(config.game.release_date ?? config.game.version);
   if (!existsSync(htmlDir)) throw new Error(`Missing directory: ${htmlDir}`);
   const status = apkBuildStatus(config);

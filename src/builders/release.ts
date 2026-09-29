@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { formatSeconds, logDone, logWarn } from '../core/log';
 import { runTimedStep } from '../core/steps';
-import { readDefaultReleasePreset, readReleasePresets, type ReleasePreset } from '../release/presets';
+import { readReleasePreset, readReleasePresets, type ReleasePreset } from '../release/presets';
 import { discoverGameVersions, withGameVersion } from '../sources/game-input';
 import { syncModSources } from '../sources/mod-sources';
 import { syncGitRepository } from '../sources/vendor';
@@ -77,7 +77,7 @@ async function readBuildPresets(defaultPresetName: string, selectedPresetNames?:
     return [...new Map(selected.map(preset => [preset.name, preset])).values()];
   }
 
-  const defaultPreset = await readDefaultReleasePreset(defaultPresetName);
+  const defaultPreset = await readReleasePreset(defaultPresetName);
   const presets = (await readReleasePresets()).filter(preset => preset.name !== defaultPresetName);
   presets.push(defaultPreset);
   return presets;

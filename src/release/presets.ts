@@ -13,13 +13,17 @@ export interface ReleasePreset {
 const RELEASE_PRESETS_SOURCE = 'input/modList.json';
 
 export async function readReleasePresets(path = RELEASE_PRESETS_SOURCE): Promise<ReleasePreset[]> {
-  const presets = JSON.parse(await readFile(resolve(path), 'utf8')) as ReleasePreset[];
+  const data = JSON.parse(await readFile(resolve(path), 'utf8')) as unknown;
+  const grouped = !Array.isArray(data) && data !== null && typeof data === 'object' ? (data as { base_mods?: unknown; presets?: unknown }) : undefined;
+  const baseMods = grouped?.base_mods ?? [];
+  const presets = (grouped?.presets ?? data) as ReleasePreset[];
+  if (!Array.isArray(baseMods) || !baseMods.every(mod => typeof mod === 'string' && mod.trim() !== '')) throw new Error(`${path} base_mods must be an array of mod names.`);
   validateReleasePresets(presets, path);
-  return presets;
-}
-
-export async function readDefaultReleasePreset(name: string): Promise<ReleasePreset> {
-  return readReleasePreset(name);
+  return presets.map(preset => {
+    const mods = [...baseMods, ...preset.mods];
+    if (new Set(mods).size !== mods.length) throw new Error(`Duplicate mod in release preset: ${preset.name}`);
+    return { ...preset, mods };
+  });
 }
 
 export async function readReleasePreset(name: string): Promise<ReleasePreset> {

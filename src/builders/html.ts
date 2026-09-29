@@ -9,7 +9,7 @@ import { minifyJs } from '../core/minify';
 import type { ThaliaConfig } from '../core/config';
 import { readLocalBundledModPaths } from './modloader';
 import { run } from '../core/process';
-import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
+import { type ReleasePreset, readReleasePreset } from '../release/presets';
 import { resolveVanillaGameHtml } from '../sources/vanilla-game';
 import { splitHtmlAssets } from './split-html-assets';
 
@@ -81,7 +81,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const preset = buildOptions.releasePreset ?? (await readDefaultReleasePreset(config.game.default_mod_list));
+      const preset = buildOptions.releasePreset ?? (await readReleasePreset(config.game.default_mod_list));
       const indexedDbModFiles = embedIndexDBMods ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
@@ -209,9 +209,11 @@ async function listIndexedDbModFiles(modsRoot: string, gameVersion: string, modS
 
 async function findModSourceFiles(versionDir: string, sourceName: string): Promise<string[]> {
   const result: string[] = [];
+  const version = basename(versionDir);
   const entries = existsSync(versionDir) ? await readdir(versionDir, { withFileTypes: true }) : [];
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.includes(sourceName) || !isIndexedDbModFile(entry.name)) continue;
+    if (entry.name.startsWith(`${sourceName}-`) && entry.name.includes(version) && !entry.name.startsWith(`${sourceName}-${version}`)) continue;
     result.push(join(versionDir, entry.name));
   }
   return [...new Set(result)];

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build:env": "bun run src/commands/prepare.ts sugarcube modloader story-format modloader-tools builtin-mods",
-    "build:local": "bun run src/commands/build-local.ts --skip-prepare --fast",
+    "build:local": "bun run src/commands/build-html.ts --skip-prepare --fast",
     "build:html": "bun run src/commands/build-html.ts --skip-prepare",
     "build:zip": "bun run src/commands/build-release.ts --target=zip",
     "build:apk": "bun run src/commands/build-release.ts --target=apk",

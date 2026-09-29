@@ -63,8 +63,8 @@ The standard game can be built from a ZIP placed under `input/game/`. When no ma
 | Command               | Purpose                                                             |
 | --------------------- | ------------------------------------------------------------------- |
 | `bun run build:env`   | Prepare SugarCube, ModLoader, story format, tools, and bundled mods |
-| `bun run build:local` | Build a fast local HTML package using prepared inputs               |
-| `bun run build:html`  | Build a fast HTML package for a selected version and preset         |
+| `bun run build:local` | Build a fast local HTML package with the selected preset            |
+| `bun run build:html`  | Build a compressed HTML package for a selected version and preset   |
 | `bun run build:zip`   | Run a complete release build and produce ZIP files                  |
 | `bun run build:apk`   | Run a complete release build and produce APK files                  |
 | `bun run build:all`   | Build HTML, ZIP, and APK release targets                            |
@@ -75,10 +75,10 @@ The standard game can be built from a ZIP placed under `input/game/`. When no ma
 Examples:
 
 ```bash
-bun run build:html --preset=chs --version=0.5.12.10
-bun run build:zip --preset=vanilla --version=0.5.12.10
-bun run build:apk --preset=chs --version=0.5.12.10
-bun run build:local --game=dolp
+bun run build:html --preset=chs --version=0.5.12.13
+bun run build:zip --preset=chs --version=0.5.12.13
+bun run build:apk --preset=chs --version=0.5.12.13
+bun run build:local --game=dolp --pure
 ```
 
 See the [documentation index](docs/README.md) for commands, the build pipeline, private mod sources, and Android SDK setup.

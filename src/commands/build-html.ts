@@ -4,12 +4,12 @@ import { prepareLocalBuild } from '../builders/prepare';
 import { readReleasePreset } from '../release/presets';
 import { withGameVersion } from '../sources/game-input';
 import { syncModSources } from '../sources/mod-sources';
-import { parseReleaseHtmlCommandOptions } from './build-options';
+import { parseBuildHtmlCommandOptions } from './build-options';
 
 const args = process.argv.slice(2);
 const config = await loadConfig();
 
-const options = parseReleaseHtmlCommandOptions(args);
+const options = parseBuildHtmlCommandOptions(args);
 const variantConfig = withGameVariant(config, options.game);
 const buildConfig = options.version ? withGameVersion(variantConfig, options.version) : variantConfig;
 const preset = await readReleasePreset(options.preset ?? buildConfig.game.default_mod_list);
