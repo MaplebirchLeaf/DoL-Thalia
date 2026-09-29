@@ -43,7 +43,7 @@ export function parseBuildHtmlCommandOptions(args: string[], htmlDefaults: Build
 }
 
 export function parseReleaseHtmlCommandOptions(args: string[]): BuildHtmlCommandOptions {
-  return parseBuildHtmlCommandOptions(args, {}, HTML_PREPARE_STEPS);
+  return parseBuildHtmlCommandOptions(args, { splitAssets: true }, HTML_PREPARE_STEPS);
 }
 
 export function parseLocalBuildCommandOptions(args: string[]): BuildHtmlCommandOptions {

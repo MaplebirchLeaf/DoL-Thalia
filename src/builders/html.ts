@@ -11,6 +11,7 @@ import { readLocalBundledModPaths } from './modloader';
 import { run } from '../core/process';
 import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
 import { resolveVanillaGameHtml } from '../sources/vanilla-game';
+import { splitHtmlAssets } from './split-html-assets';
 
 const HTML_CACHE_DIR = '.cache/html';
 
@@ -31,6 +32,7 @@ export interface BuildHtmlOptions {
   minify?: boolean;
   modloader?: boolean;
   releasePreset?: ReleasePreset;
+  splitAssets?: boolean;
 }
 
 const EMBEDDED_MOD_BASE64_PART_SIZE = 1024 * 1024;
@@ -96,6 +98,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
       imagesDir: gameInput.imagesDir,
       outputDir
     });
+    if (buildOptions.splitAssets) await splitHtmlAssets(outputHtml);
   } finally {
     await rm(cacheDir, { recursive: true, force: true });
     await rm(cleanLocalModListPath, { force: true });
