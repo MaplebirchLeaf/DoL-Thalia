@@ -8,6 +8,7 @@ import { runTimedStep } from '../core/steps';
 import { readReleasePresets } from '../release/presets';
 import { resolveVanillaGameHtml } from '../sources/vanilla-game';
 import { logWarn } from '../core/log';
+import { splitHtmlAssets } from '../builders/split-html-assets';
 
 export interface SiteReleasePreset {
   name: string;
@@ -131,7 +132,10 @@ function parseReleaseEdition(version: string): { edition: 'standard' | 'dolp'; g
 }
 
 async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
-  if (existsSync(PLAY_INDEX)) return;
+  if (existsSync(PLAY_INDEX)) {
+    await splitHtmlAssets(PLAY_INDEX);
+    return;
+  }
 
   const sourceHtml = await runTimedStep(`Build ${config.game.version} vanilla source HTML`, () => resolveVanillaGameHtml(config));
   const siteConfig: ThaliaConfig = {
@@ -157,6 +161,7 @@ async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
       modloader: true
     })
   );
+  await splitHtmlAssets(PLAY_INDEX);
 }
 
 async function writeJson(path: string, data: unknown): Promise<void> {

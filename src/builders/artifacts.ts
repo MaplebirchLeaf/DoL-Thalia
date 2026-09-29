@@ -11,6 +11,7 @@ import { run } from '../core/process';
 import { type ReleasePreset, readDefaultReleasePreset } from '../release/presets';
 import { buildReleaseAssetName, buildReleaseDate, escapeXml, safeFileName } from '../release/utils';
 import { resizePngFile } from '../tools/png-resize';
+import { splitHtmlAssets } from './split-html-assets';
 
 const ANDROID_PLATFORM_DIR = 'platforms/android';
 const RELEASE_UNSIGNED_APK_PATH = `${ANDROID_PLATFORM_DIR}/app/build/outputs/apk/release/app-release-unsigned.apk`;
@@ -123,6 +124,7 @@ async function prepareCordovaWww(sourceDir: string, wwwDir: string): Promise<voi
   await cp(sourceDir, wwwDir, { recursive: true, force: true });
   await writeFile(join(wwwDir, 'custom_cordova_additions.js'), CORDOVA_ADDITIONS, 'utf8');
   await prepareCordovaHtml(join(wwwDir, 'index.html'));
+  await splitHtmlAssets(join(wwwDir, 'index.html'));
 }
 
 async function prepareCordovaHtml(indexHtml: string): Promise<void> {
