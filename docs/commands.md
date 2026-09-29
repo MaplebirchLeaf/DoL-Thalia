@@ -27,7 +27,7 @@ bun run build:env
 | `bun run site:build`   | 生成站点数据并构建发布站点                             |
 | `bun run site:preview` | 预览已经构建的站点                                     |
 
-根目录的 `build:local` 和 `build:html` 已包含 `--skip-prepare --fast`，适合使用现有缓存迭代。`build:html` 会将普通 JS/CSS 拆到 `dist/html/`，须连同 `index.html` 一起提供；`build:zip` 仍生成单文件 HTML。`build:zip`、`build:apk` 和 `build:all` 是正式入口，会准备依赖并压缩最终脚本。
+根目录的 `build:local` 包含 `--skip-prepare --fast`，适合快速迭代；`build:html` 包含 `--skip-prepare`，默认压缩 SugarCube 脚本。`build:html` 会将普通 JS/CSS 拆到 `dist/html/`，须连同 `index.html` 一起提供；`build:zip` 仍生成单文件 HTML。`build:zip`、`build:apk` 和 `build:all` 是正式入口，会准备依赖并压缩最终脚本。
 
 ## HTML 参数
 
