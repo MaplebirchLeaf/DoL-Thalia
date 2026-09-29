@@ -15,6 +15,8 @@
     "test": "bun test ./tests",
     "test:native": "bun run tests/run-native.ts",
     "test:runtime": "bun run src/commands/test-runtime.ts",
+    "test:audit": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "audit": "python3 tools/audit_release.py --dist dist",
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
     "site:build": "bun run src/commands/site-build-data.ts && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",

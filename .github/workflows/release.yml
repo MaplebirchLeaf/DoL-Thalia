@@ -79,6 +79,7 @@ jobs:
         run: |
           bun run check
           bun test ./tests
+          bun run test:audit
           bun run test:native
 
       - name: Restore APK signing keystore
@@ -98,6 +99,9 @@ jobs:
 
       - name: Verify runtime regressions
         run: bun run test:runtime
+
+      - name: Audit release artifacts
+        run: bun run audit
 
       - name: Publish release assets
         shell: bash

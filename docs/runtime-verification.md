@@ -7,9 +7,22 @@ bun run check
 bun test ./tests
 bun run test:native
 bun run test:runtime
+bun run audit
 ```
 
 `test:native` 使用 `JAVA_HOME` 中的 JDK 17，自动在临时目录编译和清理测试。`test:runtime` 分别在 ModLoader、ModLoaderGui 和 BeautySelectorAddon 目录运行测试；首次执行前需要完成 `bun run build:env`。
+
+## 产物审计
+
+`bun run audit` 调用 `tools/audit_release.py`（只需 Python 3 标准库，无第三方依赖），以只读方式核对 `dist/` 中的成品，验证构建成功本身不能证明的不变量：
+
+- HTML：内嵌基础模组确实以合法 base64 编码，且每份载荷都能作为 ZIP 解压并通过 CRC 校验。
+- ZIP：包体可读、全部成员通过 CRC、存在 HTML 入口。
+- APK：可解析为 ZIP、包含 `AndroidManifest.xml` 与 `classes.dex`、存在 v2/v3 签名块、未压缩条目满足 4 字节对齐。签名块存在性检查不等同于密码学签名验证。
+
+也可以单独指定目标：`python3 tools/audit_release.py --html <文件>`、`--zip <文件>`、`--apk <文件>`。全部通过时退出码为 0，任一失败为 1，便于接入 CI。
+
+该脚本把内嵌模组 ZIP 校验、APK 签名块存在性和条目对齐检查变为可重复执行的检查。正式发布前仍需使用 `apksigner verify` 验证签名；对齐结果可用 `zipalign -c -p 4` 独立复核。
 
 ## 验证范围
 
