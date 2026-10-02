@@ -25,7 +25,7 @@ DoL-Thalia 把工具链准备和成品组装分开。正式 Release 会按需执
 | SugarCube            | `thalia.config.toml` 中配置的上游仓库                       |
 | 可下载的外部模组     | `[mod_sources.*]`                                           |
 
-`input/game/`、`input/game-dolp/`、`input/mods/`、`input/mods-dolp/` 和 `input/signing/` 都是本地私有输入，不会提交到 Git。标准版缺少匹配的本地游戏 ZIP 时，构建器可以下载并编译配置中的上游版本；其他游戏变体仍需要准备相应输入。
+`input/game/`、`input/game-dolp/`、`input/mods/`、`input/mods-dolp/` 和 `input/signing/` 都是本地私有输入，不会提交到 Git。标准版缺少匹配的本地游戏 ZIP 时，构建器优先读取 Vrelnir 官方站点的对应版本普通发行包。站点不提供指定版本时，再下载并编译官方对应版本源码；DoLP 缺少本地包时，从官方 GitGud Release 按版本只下载 `DoLP_Vanilla`，不使用发行方预装美化的包。
 
 ## 两类模组
 
@@ -72,3 +72,7 @@ GitHub Actions 只能读取已检出的仓库、公开下载源、构建 Secret 
 HTML/ZIP 的 Worker 地址通过仓库 Actions Variable `THALIA_MOD_PROXY_URL` 配置，本地使用忽略的 `.env` 中的同名变量。它不是访问令牌；地址会随网页产物分发。工作流在发布前检查构建代码、原生下载和三个运行时子仓库的回归测试。
 
 常用入口和参数见[命令参考](commands.md)，APK 环境见[Android APK 环境](android-build.md)。
+
+## 当前发布组合
+
+标准版使用 `input/modList.json`，提供六套素材组合的英文与汉化版本。DoLP 使用 `input/modList-dolp.json`，只提供六套英文组合，不包含 ModI18N。素材组合为基础、Mysterious、女性 Goose、男性 Goose、女性 Goose＋Mysterious、男性 Goose＋Mysterious。AU 已移出当前发布配置。

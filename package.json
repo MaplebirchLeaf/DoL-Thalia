@@ -19,7 +19,8 @@
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
     "site:build": "bun run src/commands/site-build-data.ts && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
-    "fix": "oxlint --fix && oxfmt"
+    "fix": "oxlint --fix && oxfmt",
+    "build:ready": "bun run src/commands/build-ready.ts"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",

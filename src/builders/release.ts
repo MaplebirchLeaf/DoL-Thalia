@@ -31,7 +31,7 @@ const ALL_RELEASE_TARGETS: ReleaseTarget[] = ['html', 'zip', 'apk'];
 export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOptions = {}): Promise<void> {
   const startedAt = Date.now();
   const versions = options.versions?.length ? options.versions : await discoverGameVersions(config);
-  const presets = await readBuildPresets(config.game.default_mod_list, options.presets);
+  const presets = await readBuildPresets(config.game.default_mod_list, options.presets, config.paths.mod_list);
   const targets = new Set<ReleaseTarget>(options.targets?.length ? options.targets : ALL_RELEASE_TARGETS);
   const needsHtml = targets.has('html') || targets.has('zip') || targets.has('apk');
   const apkStatus = targets.has('apk') ? apkBuildStatus(config) : undefined;
@@ -66,9 +66,9 @@ export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOp
   logDone(`All done in ${formatSeconds(startedAt)}`);
 }
 
-async function readBuildPresets(defaultPresetName: string, selectedPresetNames?: string[]): Promise<ReleasePreset[]> {
+async function readBuildPresets(defaultPresetName: string, selectedPresetNames?: string[], path?: string): Promise<ReleasePreset[]> {
   if (selectedPresetNames?.length) {
-    const presets = await readReleasePresets();
+    const presets = await readReleasePresets(path);
     const selected = selectedPresetNames.map(name => {
       const preset = presets.find(item => item.name === name);
       if (!preset) throw new Error(`input/modList.json has no preset named: ${name}`);
@@ -77,8 +77,8 @@ async function readBuildPresets(defaultPresetName: string, selectedPresetNames?:
     return [...new Map(selected.map(preset => [preset.name, preset])).values()];
   }
 
-  const defaultPreset = await readReleasePreset(defaultPresetName);
-  const presets = (await readReleasePresets()).filter(preset => preset.name !== defaultPresetName);
+  const defaultPreset = await readReleasePreset(defaultPresetName, path);
+  const presets = (await readReleasePresets(path)).filter(preset => preset.name !== defaultPresetName);
   presets.push(defaultPreset);
   return presets;
 }

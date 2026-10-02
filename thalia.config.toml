@@ -2,39 +2,57 @@
 name = "DoL-Thalia"
 
 [game]
-default_mod_list = "vanilla"
-version = "0.5.12.10"
+default_mod_list = "thalia"
+version = "0.5.12.13"
 
 [games.dolp]
-version = "0.775"
+version = "0.778"
 source_html = "input/game-dolp/*.zip"
-default_mod_list = "vanilla"
+default_mod_list = "thalia"
 mods_dir = "input/mods-dolp"
+mod_list = "input/modList-dolp.json"
+release_repository = "Frostberg/degrees-of-lewdity-plus"
 
 [mod_sources.chinese-localization]
 repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
 dolp_repository = ""
-asset_keywords = ["GameOriginalImagePack", "ModI18N"]
+asset_keywords = ["ModI18N"]
 asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
+release_tag = "maplebirch-release-v5.2.1"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
-[mod_sources."AUfemale"]
-asset_extensions = [".zip"]
+[mod_sources.deadwood-reblooms]
+repository = "MaplebirchLeaf/Deadwood-Reblooms"
+release_tag = "v1.2.0"
+asset_keywords = ["deadwood-reblooms", "deadwood-reblooms-audio"]
+asset_extensions = [".modpack"]
 
-[mod_sources."AUmale"]
-asset_extensions = [".zip"]
-
-[mod_sources."AUandrogynous"]
-asset_extensions = [".zip"]
+[mod_sources.revelation-the-book-of-return]
+repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
+release_tag = "v1.0.1"
+asset_keywords = ["revelation-the-book-of-return"]
+asset_extensions = [".modpack"]
 
 [mod_sources."Fem Goose Compilation"]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_keywords = ["Fem.Goose.Compilation"]
 asset_extensions = [".zip"]
 
 [mod_sources."Masc Goose Compilation"]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_keywords = ["Masc.Goose.Compilation"]
+asset_extensions = [".zip"]
+
+[mod_sources."Mysterious"]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_keywords = ["Mysterious"]
 asset_extensions = [".zip"]
 
 [upstreams.sugarcube_vrelnir]

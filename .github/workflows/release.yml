@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to create or update, for example v0.5.8.10-0524
+        description: Release tag to create or update, for example v0.5.12.13
         required: true
         type: string
 
@@ -55,6 +55,13 @@ jobs:
 
           Write-Host "Release: $releaseTag ($game $gameVersion)"
 
+      - name: Check private resource access
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN" || { echo "Missing PRIVATE_MODS_TOKEN secret." >&2; exit 1; }
+          gh release view assets --repo MaplebirchLeaf/DoL-Thalia-Assets >/dev/null
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -92,7 +99,12 @@ jobs:
           printf '%s' "$THALIA_KEYSTORE_BASE64" | base64 --decode > input/signing/DoL-Thalia.keystore
 
       - name: Build release assets
-        run: bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
+        run: |
+          if [ "$THALIA_GAME" = "dolp" ]; then
+            bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION"
+          else
+            bun run build:ready --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION" --presets=thalia,goose-f-mysterious,goose-m-mysterious,goose-f,goose-m,mysterious,chs,chs-goose-f-mysterious,chs-goose-m-mysterious,chs-goose-f,chs-goose-m,chs-mysterious --targets=zip,apk
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
           THALIA_MOD_PROXY_URL: ${{ vars.THALIA_MOD_PROXY_URL }}

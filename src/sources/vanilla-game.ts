@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, readdir, writeFile } from 'node:fs/promises';
-import { downloadFile } from '../core/download';
+import { downloadFile, fetchOk } from '../core/download';
 import { dirname, join, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { extractZipSafe } from '../core/zip';
@@ -55,4 +55,25 @@ async function chmodBundledTweego(root: string): Promise<void> {
 
 function releaseArchiveUrl(version: string): string {
   return `https://gitgud.io/Vrelnir/degrees-of-lewdity/-/archive/${encodeURIComponent(version)}/degrees-of-lewdity-${encodeURIComponent(version)}.zip`;
+}
+
+export function selectOfficialVanillaDownload(page: string, version: string): string | undefined {
+  const text = page.replace(/<[^>]*>/g, ' ');
+  if (text.match(/Current version:\s*(\d+\.\d+\.\d+\.\d+)/i)?.[1] !== version) return undefined;
+  for (const match of page.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    if (match[2].replace(/<[^>]*>/g, '').trim() !== 'Download normal version') continue;
+    const href = match[1].match(/href=["']([^"']+)["']/i)?.[1];
+    if (href?.startsWith('https://pixeldrain.com/api/file/')) return href;
+  }
+  return undefined;
+}
+
+export async function resolveVanillaGameInput(config: ThaliaConfig): Promise<string> {
+  const output = resolve(VANILLA_GAME_CACHE, config.game.version, `Degrees of Lewdity ${config.game.version}.zip`);
+  if (existsSync(output)) return output;
+  const response = await fetchOk('https://www.vrelnir.com/', { label: 'Vrelnir official download page' });
+  const url = selectOfficialVanillaDownload(await response.text(), config.game.version);
+  if (!url) return resolveVanillaGameHtml(config);
+  await downloadFile(url, output);
+  return output;
 }

@@ -10,7 +10,8 @@ import type { ThaliaConfig } from '../core/config';
 import { readLocalBundledModPaths } from './modloader';
 import { run } from '../core/process';
 import { type ReleasePreset, readReleasePreset } from '../release/presets';
-import { resolveVanillaGameHtml } from '../sources/vanilla-game';
+import { resolveVanillaGameInput } from '../sources/vanilla-game';
+import { resolveDoLPGameZip } from '../sources/dolp-game';
 import { splitHtmlAssets } from './split-html-assets';
 
 const HTML_CACHE_DIR = '.cache/html';
@@ -81,7 +82,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const preset = buildOptions.releasePreset ?? (await readReleasePreset(config.game.default_mod_list));
+      const preset = buildOptions.releasePreset ?? (await readReleasePreset(config.game.default_mod_list, config.paths.mod_list));
       const indexedDbModFiles = embedIndexDBMods ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
@@ -121,7 +122,10 @@ function escapeHtmlAttribute(value: string): string {
 
 async function prepareGameInput(config: ThaliaConfig, cacheDir: string): Promise<GameInput> {
   const localSource = await findGameSource(config.paths.source_html, config.game.version);
-  const source = localSource ?? (isVanillaGameInput(config.paths.source_html) ? await resolveVanillaGameHtml(config) : undefined);
+  const source =
+    localSource ??
+    (config.game.release_repository ? await resolveDoLPGameZip(config) : undefined) ??
+    (isVanillaGameInput(config.paths.source_html) ? await resolveVanillaGameInput(config) : undefined);
   if (!source) throw new Error(`Game input has no file for ${config.game.version}: ${config.paths.source_html}`);
   if (extname(source).toLowerCase() !== '.zip') {
     const sourceDir = dirname(source);

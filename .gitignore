@@ -19,6 +19,7 @@ site/public/play/
 # local game/mod/signing inputs
 input/*
 !input/modList.json
+!input/modList-dolp.json
 !input/icon.png
 !input/.gitkeep
 

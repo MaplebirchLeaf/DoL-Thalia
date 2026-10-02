@@ -12,7 +12,7 @@ const config = await loadConfig();
 const options = parseBuildHtmlCommandOptions(args);
 const variantConfig = withGameVariant(config, options.game);
 const buildConfig = options.version ? withGameVersion(variantConfig, options.version) : variantConfig;
-const preset = await readReleasePreset(options.preset ?? buildConfig.game.default_mod_list);
+const preset = await readReleasePreset(options.preset ?? buildConfig.game.default_mod_list, buildConfig.paths.mod_list);
 options.html.releasePreset = preset;
 
 if (options.prepare !== 'skip') {

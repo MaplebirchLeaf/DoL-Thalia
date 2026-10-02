@@ -12,45 +12,27 @@ interface PresetDetailSource {
 }
 
 const PRESET_DETAILS: Record<string, PresetDetailSource> = {
-  'chs-au-f': {
-    description: {
-      zh: '汉化基础上加入 AU female 美化资源，偏女性化角色外观。',
-      en: 'Chinese-localized package with AU female visual resources for a more feminine character presentation.'
-    },
-    image: 'assets/AUfemale.png'
-  },
-  'chs-au-m': {
-    description: {
-      zh: '汉化基础上加入 AU male 美化资源，偏男性化角色外观。',
-      en: 'Chinese-localized package with AU male visual resources for a more masculine character presentation.'
-    },
-    image: 'assets/AUmale.png'
-  },
-  'chs-au-a': {
-    description: {
-      zh: '汉化基础上加入 AU androgynous 美化资源，偏中性角色外观。',
-      en: 'Chinese-localized package with AU androgynous visual resources for a more neutral character presentation.'
-    },
-    image: 'assets/AUandrogynous.png'
-  },
+  'chs-goose-f-mysterious': { description: { zh: '女性 Goose 侧栏搭配 Mysterious 战斗素材。', en: 'Fem Goose sidebar sprites with Mysterious combat resources.' }, image: 'assets/Fem Goose.png' },
+  'chs-goose-m-mysterious': { description: { zh: '男性 Goose 侧栏搭配 Mysterious 战斗素材。', en: 'Masc Goose sidebar sprites with Mysterious combat resources.' }, image: 'assets/Masc Goose.png' },
   'chs-goose-f': {
     description: {
-      zh: '汉化基础上加入 Fem Goose 美化资源，提供另一组女性化外观风格。',
-      en: 'Chinese-localized package with Fem Goose visual resources, offering another feminine style.'
+      zh: 'Fem Goose 的女性角色侧栏与战斗美化。',
+      en: 'Fem Goose visual resources for feminine sidebar and combat sprites.'
     },
     image: 'assets/Fem Goose.png'
   },
   'chs-goose-m': {
     description: {
-      zh: '汉化基础上加入 Masc Goose 美化资源，提供另一组男性化外观风格。',
-      en: 'Chinese-localized package with Masc Goose visual resources, offering another masculine style.'
+      zh: 'Masc Goose 的男性角色侧栏与战斗美化。',
+      en: 'Masc Goose visual resources for masculine sidebar and combat sprites.'
     },
     image: 'assets/Masc Goose.png'
   }
 };
 
 export function presetDetail(preset: ReleasePreset, language: Language, baseUrl: string): PresetDetail {
-  const detail = PRESET_DETAILS[preset.name];
+  const key = preset.name.startsWith('chs-') ? preset.name : `chs-${preset.name}`;
+  const detail = PRESET_DETAILS[key];
   if (!detail) return { description: presetTitle(preset, language) };
   return {
     description: detail.description[language],

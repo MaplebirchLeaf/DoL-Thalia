@@ -4,7 +4,7 @@ import { releaseAssetUrl } from '../site/src/releases';
 
 // Ground truth: file names that actually exist on published GitHub releases
 // (verified with `gh release view v0.5.10.12-0626 --json assets`).
-const PUBLISHED_ASSETS = ['DoL-Thalia-0.5.10.12-chs-0626.apk', 'DoL-Thalia-0.5.10.12-chs-au-a-0626.zip', 'DoL-Thalia-0.5.10.12-vanilla-0626.zip', 'DoL-Thalia-0.5.10.12-chs-goose-m-0626.apk'];
+const PUBLISHED_ASSETS = ['DoL-Thalia-0.5.10.12-chs-0626.apk', 'DoL-Thalia-0.5.10.12-vanilla-0626.zip', 'DoL-Thalia-0.5.10.12-chs-goose-m-0626.apk'];
 
 /**
  * Model the publish pipeline exactly: the builder receives the bare game version
@@ -32,7 +32,7 @@ test('site download links resolve to names the publisher actually creates', () =
   ];
   for (const [stored, gameVersion] of cases) {
     const date = stored.match(/-(\d{4})$/)?.[1];
-    for (const preset of ['vanilla', 'chs-au-f']) {
+    for (const preset of ['vanilla', 'chs-goose-f-mysterious']) {
       for (const extension of ['zip', 'apk'] as const) {
         const file = releaseAssetUrl(stored, preset, extension).split('/').pop();
         expect(file).toBe(publishedName(gameVersion, preset, extension, date));

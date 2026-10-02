@@ -9,6 +9,8 @@ export interface UpstreamConfig {
 }
 
 export interface GameVariantConfig {
+  mod_list?: string;
+  release_repository?: string;
   /** Version identifier for the variant (may be non-4-part, e.g. 0.775). */
   version?: string;
   source_html?: string;
@@ -18,6 +20,7 @@ export interface GameVariantConfig {
 }
 
 export type ModSourceConfig = {
+  local_dir?: string;
   asset_extensions?: string[];
   asset_keywords?: string[];
   asset_urls?: string[];
@@ -34,6 +37,7 @@ export interface ThaliaConfig {
 
   game: {
     default_mod_list: string;
+    release_repository?: string;
     release_date?: string;
     version: string;
   };
@@ -50,6 +54,7 @@ export interface ThaliaConfig {
 
   paths: {
     source_html: string;
+    mod_list?: string;
     builtin_mods: string;
     output_html: string;
     output_zip: string;
@@ -113,7 +118,7 @@ function validateConfig(config: ThaliaConfig): void {
 
   for (const [gameName, variant] of Object.entries(config.games || {})) {
     if (!variant || typeof variant !== 'object') throw new Error(`Invalid config field: games.${gameName}`);
-    for (const key of ['version', 'source_html', 'default_mod_list', 'mods_dir'] as const) {
+    for (const key of ['version', 'source_html', 'default_mod_list', 'mods_dir', 'mod_list', 'release_repository'] as const) {
       const value = variant[key];
       if (value !== undefined && (typeof value !== 'string' || value.trim() === '')) {
         throw new Error(`Invalid config field: games.${gameName}.${key}`);
@@ -151,11 +156,13 @@ export function withGameVariant(config: ThaliaConfig, game: string | undefined):
     game: {
       ...config.game,
       version: variant.version ?? config.game.version,
+      release_repository: variant.release_repository,
       default_mod_list: variant.default_mod_list ?? config.game.default_mod_list
     },
     paths: {
       ...config.paths,
       source_html: variant.source_html ?? config.paths.source_html,
+      mod_list: variant.mod_list ?? config.paths.mod_list,
       builtin_mods: variant.mods_dir ?? config.paths.builtin_mods
     },
     mod_sources: modSources
