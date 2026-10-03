@@ -7,55 +7,45 @@
   ],
   "presets": [
     {
-      "name": "thalia",
-      "title_en": "Thalia",
-      "title_cn": "Thalia 基础整合版",
-      "mods": []
-    },
-    {
       "name": "goose-f-mysterious",
-      "title_en": "Fem Goose + Mysterious",
-      "title_cn": "女性 Goose＋Mysterious",
+      "title_en": "Fem Goose + Mysterious + NPC Portraits",
+      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits",
       "mods": [
         "Fem Goose Compilation",
-        "Mysterious"
+        "Mysterious",
+        "NPC Sidebar Portraits"
       ]
     },
     {
       "name": "goose-m-mysterious",
-      "title_en": "Masc Goose + Mysterious",
-      "title_cn": "男性 Goose＋Mysterious",
+      "title_en": "Masc Goose + Mysterious + NPC Portraits",
+      "title_cn": "男性 Goose＋Mysterious＋NPC Portraits",
       "mods": [
         "Masc Goose Compilation",
-        "Mysterious"
-      ]
-    },
-    {
-      "name": "chs",
-      "title_en": "Thalia (CHS)",
-      "title_cn": "Thalia 基础整合版（汉化）",
-      "mods": [
-        "ModI18N"
+        "Mysterious",
+        "NPC Sidebar Portraits"
       ]
     },
     {
       "name": "chs-goose-f-mysterious",
-      "title_en": "Fem Goose + Mysterious (CHS)",
-      "title_cn": "女性 Goose＋Mysterious（汉化）",
+      "title_en": "Fem Goose + Mysterious + NPC Portraits (CHS)",
+      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits（汉化）",
       "mods": [
         "ModI18N",
         "Fem Goose Compilation",
-        "Mysterious"
+        "Mysterious",
+        "NPC Sidebar Portraits"
       ]
     },
     {
       "name": "chs-goose-m-mysterious",
-      "title_en": "Masc Goose + Mysterious (CHS)",
-      "title_cn": "男性 Goose＋Mysterious（汉化）",
+      "title_en": "Masc Goose + Mysterious + NPC Portraits (CHS)",
+      "title_cn": "男性 Goose＋Mysterious＋NPC Portraits（汉化）",
       "mods": [
         "ModI18N",
         "Masc Goose Compilation",
-        "Mysterious"
+        "Mysterious",
+        "NPC Sidebar Portraits"
       ]
     }
   ]

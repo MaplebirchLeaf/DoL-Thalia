@@ -15,7 +15,7 @@ This is an unofficial third-party project. It is not maintained or endorsed by t
 
 Use the [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/) to compare packages, or download files directly from [GitHub Releases](https://github.com/MaplebirchLeaf/DoL-Thalia/releases).
 
-Release presets are Thalia, Fem Goose + Mysterious, and Masc Goose + Mysterious. Standard DoL provides English and Chinese versions of each preset: 6 configurations, each with a ZIP and an APK. DoLP provides the 3 English configurations when its game version is compatible with the bundled mods.
+Release presets are Fem Goose + Mysterious + NPC Portraits and Masc Goose + Mysterious + NPC Portraits. Standard DoL provides English and Chinese versions of each preset: 4 configurations, each with a ZIP and an APK. DoLP provides the 2 English configurations when its game version is compatible with the bundled mods.
 
 - **ZIP:** Extract the archive and open the included HTML file in a browser. A release ZIP is a complete game package; do not import it as a ModLoader mod.
 - **APK:** Install it on an Android device. Export your saves before updating or uninstalling the app.
@@ -78,9 +78,9 @@ The standard game can be built from a ZIP placed under `input/game/`. When no ma
 Examples:
 
 ```bash
-bun run build:html --preset=chs --version=0.5.12.13
-bun run build:zip --preset=chs --version=0.5.12.13
-bun run build:apk --preset=chs --version=0.5.12.13
+bun run build:html --preset=chs-goose-f-mysterious --version=0.5.12.13
+bun run build:zip --preset=chs-goose-f-mysterious --version=0.5.12.13
+bun run build:apk --preset=chs-goose-f-mysterious --version=0.5.12.13
 bun run build:html --game=dolp --pure
 ```
 

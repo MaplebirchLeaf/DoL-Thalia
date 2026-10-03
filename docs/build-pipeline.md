@@ -85,4 +85,4 @@ TypeScript 的 `src/core/`、`src/sources/` 和 `src/builders/` 负责配置、�
 
 ## 当前发布组合
 
-标准版使用 `input/modList.json`，提供基础整合、女性 Goose＋Mysterious、男性 Goose＋Mysterious三种组合的英文与汉化版本，共 6 套配置。DoLP 使用 `input/modList-dolp.json`，提供这三种组合的英文版本，不包含 ModI18N。女性 Goose、男性 Goose 和 Mysterious 的素材源仍用于组合包。
+标准版使用 `input/modList.json`，提供女性 Goose＋Mysterious＋NPC Portraits、男性 Goose＋Mysterious＋NPC Portraits两种组合的英文与汉化版本，共 4 套配置。DoLP 使用 `input/modList-dolp.json`，提供这两种组合的英文版本，不包含 ModI18N。女性 Goose、男性 Goose、Mysterious 和 NPC Sidebar Portraits 均从私有资源 Release 读取，NPC 立绘图包加载在美化包之后。

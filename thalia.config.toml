@@ -2,13 +2,13 @@
 name = "DoL-Thalia"
 
 [game]
-default_mod_list = "thalia"
+default_mod_list = "goose-f-mysterious"
 version = "0.5.12.13"
 
 [games.dolp]
 version = "0.778"
 source_html = "input/game-dolp/*.zip"
-default_mod_list = "thalia"
+default_mod_list = "goose-f-mysterious"
 mods_dir = "input/mods-dolp"
 mod_list = "input/modList-dolp.json"
 release_repository = "Frostberg/degrees-of-lewdity-plus"
@@ -22,13 +22,13 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.2.2"
+release_tag = "maplebirch-release-v5.2.3"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v1.3.1"
+release_tag = "v1.3.2"
 asset_keywords = ["deadwood-reblooms", "deadwood-reblooms-audio"]
 asset_extensions = [".modpack"]
 
@@ -54,6 +54,12 @@ asset_extensions = [".zip"]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
 asset_keywords = ["Mysterious"]
+asset_extensions = [".zip"]
+
+[mod_sources."NPC Sidebar Portraits"]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_keywords = ["NPC.Sidebar.Portraits"]
 asset_extensions = [".zip"]
 
 [upstreams.sugarcube_vrelnir]

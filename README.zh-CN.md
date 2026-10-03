@@ -15,7 +15,7 @@ DoL-Thalia 是一个面向 [Degrees of Lewdity](https://gitgud.io/Vrelnir/degree
 
 可以在 [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/) 比较不同组合，也可以直接前往 [GitHub Releases](https://github.com/MaplebirchLeaf/DoL-Thalia/releases) 下载。
 
-发布组合为 Thalia 基础整合、女性 Goose＋Mysterious、男性 Goose＋Mysterious。标准版为每种组合提供英文与汉化版本，共 6 套配置，每套均有 ZIP 和 APK。DoLP 在游戏版本兼容内置模组时提供 3 套英文配置。
+发布组合为女性 Goose＋Mysterious＋NPC Portraits、男性 Goose＋Mysterious＋NPC Portraits。标准版为每种组合提供英文与汉化版本，共 4 套配置，每套均有 ZIP 和 APK。DoLP 在游戏版本兼容内置模组时提供 2 套英文配置。
 
 - **ZIP：** 解压后使用浏览器打开其中的 HTML 文件。Release ZIP 是完整游戏包，不要作为 ModLoader 模组导入。
 - **APK：** 安装到 Android 设备游玩。更新或卸载前请先导出存档。
@@ -78,9 +78,9 @@ bun run build:html --fast
 示例：
 
 ```bash
-bun run build:html --preset=chs --version=0.5.12.13
-bun run build:zip --preset=thalia --version=0.5.12.13
-bun run build:apk --preset=chs --version=0.5.12.13
+bun run build:html --preset=chs-goose-f-mysterious --version=0.5.12.13
+bun run build:zip --preset=goose-f-mysterious --version=0.5.12.13
+bun run build:apk --preset=chs-goose-f-mysterious --version=0.5.12.13
 bun run build:html --game=dolp --pure
 ```
 

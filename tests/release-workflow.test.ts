@@ -11,8 +11,8 @@ const workflow = Bun.YAML.parse(await Bun.file('.github/workflows/release.yml').
 const validation = workflow.jobs.release.steps.find(step => step.name === 'Validate release tag and source commit')?.run;
 if (!validation) throw new Error('Release workflow has no tag validation script');
 const sourceCommit = 'a'.repeat(40);
-const englishPresets = ['thalia', 'goose-f-mysterious', 'goose-m-mysterious'];
-const standardPresets = [...englishPresets, ...englishPresets.map(name => (name === 'thalia' ? 'chs' : `chs-${name}`))];
+const englishPresets = ['goose-f-mysterious', 'goose-m-mysterious'];
+const standardPresets = [...englishPresets, ...englishPresets.map(name => `chs-${name}`)];
 
 // The workflow command sees controlled commit lookups and cannot mutate Git.
 const mockGit = `#!/usr/bin/env bash
