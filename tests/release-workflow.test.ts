@@ -96,3 +96,15 @@ test('release workflow permits a preexisting tag pointing to the checkout commit
   expect(result.status).toBe(0);
   expect(result.values.THALIA_RELEASE_TAG).toBe('v0.5.12.13');
 });
+
+test('release validates the signing keystore after Java setup and before costly build preparation', () => {
+  const steps = workflow.jobs.release.steps;
+  const java = steps.findIndex(step => step.name === 'Setup Java');
+  const signing = steps.findIndex(step => step.name === 'Restore and validate APK signing keystore');
+  const sdk = steps.findIndex(step => step.name === 'Setup Android SDK');
+  const build = steps.findIndex(step => step.name === 'Build release assets');
+  expect(java).toBeGreaterThanOrEqual(0);
+  expect(signing).toBeGreaterThan(java);
+  expect(signing).toBeLessThan(sdk);
+  expect(signing).toBeLessThan(build);
+});

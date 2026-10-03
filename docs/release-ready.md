@@ -22,7 +22,7 @@ GitHub Pages 只上传 `dist/site`。ZIP/APK 下载链接指向 Release。中文
 
 - 资源仓库的固定 `assets` Release 已包含三个 ZIP 和 `manifest.json`。
 - DoL-Thalia 已设置 `PRIVATE_MODS_TOKEN`，权限限定为资源仓库 Contents 只读。本机 `gh` 登录不会自动提供这个 Actions Secret。
-- `THALIA_KEYSTORE_BASE64` 已配置，用于 APK 签名。
+- `THALIA_KEYSTORE_BASE64` 已配置，用于 APK 签名。内容为原始密钥库字节的 Base64，兼容两层 Base64 包装；工作流在构建前验证存储密码、私钥密码和别名，仅记录证书 SHA256，不生成替代密钥。
 - 正式汉化已发布，构建配置和脚本已提交并推送。
 - 手动启动 Release 工作流，选择待发布源码的分支／标签并填写发布标签；成功后公开整合包 Release 并部署 GitHub Pages。
 

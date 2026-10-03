@@ -90,6 +90,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Restore and validate APK signing keystore
+        env:
+          THALIA_KEYSTORE_BASE64: ${{ secrets.THALIA_KEYSTORE_BASE64 }}
+        run: bun run src/commands/restore-signing-keystore.ts
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -108,15 +113,6 @@ jobs:
           bun test ./tests
           bun run test:audit
           bun run test:native
-
-      - name: Restore APK signing keystore
-        shell: bash
-        env:
-          THALIA_KEYSTORE_BASE64: ${{ secrets.THALIA_KEYSTORE_BASE64 }}
-        run: |
-          test -n "$THALIA_KEYSTORE_BASE64" || { echo "Missing THALIA_KEYSTORE_BASE64 secret." >&2; exit 1; }
-          mkdir -p input/signing
-          printf '%s' "$THALIA_KEYSTORE_BASE64" | base64 --decode > input/signing/DoL-Thalia.keystore
 
       - name: Build release assets
         run: |
