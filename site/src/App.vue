@@ -3,7 +3,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import BackTopButton from './components/BackTopButton.vue';
 import HelpPage from './components/HelpPage.vue';
 import HomePage from './components/HomePage.vue';
-import PresetComparison from './components/PresetComparison.vue';
 import SiteFooter from './components/SiteFooter.vue';
 import SiteHeader from './components/SiteHeader.vue';
 import VersionsPage from './components/VersionsPage.vue';
@@ -71,10 +70,7 @@ onUnmounted(() => {
 
   <main>
     <HomePage v-if="activePage === 'home'" :localized-text="localizedText" :play-url="playUrl" @show-versions="showVersions" />
-    <template v-else-if="activePage === 'versions'">
-      <VersionsPage :active-language="activeLanguage" :localized-text="localizedText" />
-      <PresetComparison :active-language="activeLanguage" />
-    </template>
+    <VersionsPage v-else-if="activePage === 'versions'" :active-language="activeLanguage" :localized-text="localizedText" />
     <HelpPage v-else-if="activePage === 'help'" :localized-text="localizedText" />
   </main>
 

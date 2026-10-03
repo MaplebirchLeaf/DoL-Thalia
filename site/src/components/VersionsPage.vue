@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { LocalizedSiteCopy } from '../content';
 import { releasePresets, releaseVersions } from '../data';
 import { presetTitle } from '../presets';
 import { releaseAssetUrl, releaseEdition, releaseTag } from '../releases';
 import type { Language, ReleasePreset, SiteRelease } from '../types';
-import { ref } from 'vue';
 
 const props = defineProps<{
   localizedText: LocalizedSiteCopy;
@@ -50,7 +49,12 @@ function toggleVersion(version: SiteRelease) {
               <span class="version-tag">{{ releaseTag(version.tag) }}</span>
               <span class="version-hint">{{ localizedText.versionListHint }}</span>
             </span>
-            <span class="version-toggle">{{ expandedTag === version.tag ? localizedText.collapse : localizedText.expand }}</span>
+            <span class="version-toggle">
+              {{ expandedTag === version.tag ? localizedText.collapse : localizedText.expand }}
+              <svg class="version-chevron" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m5 7.5 5 5 5-5" />
+              </svg>
+            </span>
           </button>
           <Transition name="drawer">
             <div v-if="expandedTag === version.tag" :id="`version-detail-${version.tag}`" class="version-detail-shell">

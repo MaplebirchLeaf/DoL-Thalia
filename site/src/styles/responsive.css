@@ -136,26 +136,17 @@
     gap: 12px;
   }
 
-  .version-row {
-    padding: 16px 16px 12px;
-  }
-
   .version-summary {
     align-items: flex-start;
     gap: 12px;
   }
 
-  .version-summary h3 {
+  .version-tag {
     font-size: 20px;
   }
 
-  .version-summary > span {
-    padding-top: 2px;
-    font-size: 14px;
-  }
-
-  .version-detail-shell {
-    margin-top: 10px;
+  .version-toggle {
+    margin-top: 4px;
   }
 
   .download-row {
@@ -177,18 +168,6 @@
     min-height: 34px;
     padding: 0 8px;
     font-size: 14px;
-  }
-
-  .preset-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .preset-card {
-    grid-template-rows: 150px 1fr;
-  }
-
-  .preset-image {
-    height: 150px;
   }
 
   .faq-item {
@@ -247,6 +226,19 @@
     min-height: 32px;
     padding: 0 6px;
     font-size: 13px;
+  }
+
+  .version-summary {
+    padding: 16px 12px;
+  }
+
+  .version-toggle {
+    gap: 4px;
+  }
+
+  .version-detail-shell {
+    margin-right: 12px;
+    margin-left: 12px;
   }
 
   .hero-copy,
