@@ -24,11 +24,11 @@ test('DoLP presets exclude localization and AU while standard provides both lang
   const config = await loadConfig();
   const dolp = withGameVariant(config, 'dolp');
   const presets = await readReleasePresets(dolp.paths.mod_list);
-  expect(presets).toHaveLength(6);
+  expect(presets.map(preset => preset.name)).toEqual(['thalia', 'goose-f-mysterious', 'goose-m-mysterious']);
   for (const preset of presets) {
     expect(preset.mods).not.toContain('ModI18N');
     expect(preset.mods.some(mod => mod.startsWith('AU'))).toBe(false);
   }
-  expect(await readReleasePresets()).toHaveLength(12);
+  expect((await readReleasePresets()).map(preset => preset.name)).toEqual(['thalia', 'goose-f-mysterious', 'goose-m-mysterious', 'chs', 'chs-goose-f-mysterious', 'chs-goose-m-mysterious']);
   expect(dolp.game.release_repository).toBe('Frostberg/degrees-of-lewdity-plus');
 });

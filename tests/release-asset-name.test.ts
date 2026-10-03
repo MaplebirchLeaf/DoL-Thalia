@@ -53,3 +53,20 @@ test('every site link uses the release tag as stored', () => {
   expect(releaseAssetUrl('dolp-0.778-0914', 'chs', 'zip')).toContain('/download/vdolp-0.778-0914/');
   expect(releaseAssetUrl('0.5.12.13', 'chs', 'zip')).toContain('/download/v0.5.12.13/');
 });
+
+test('buildReleaseDate retains environment precedence and standard-version fallback', () => {
+  const previous = Bun.env.THALIA_RELEASE_DATE;
+  try {
+    Bun.env.THALIA_RELEASE_DATE = ' 1003 ';
+    expect(buildReleaseDate('0.5.12.13-0914')).toBe('1003');
+    delete Bun.env.THALIA_RELEASE_DATE;
+    expect(buildReleaseDate('0914')).toBe('0914');
+    expect(buildReleaseDate('0.5.12.13-0914')).toBe('0914');
+    expect(buildReleaseDate('0.778-0914')).toBeUndefined();
+    expect(buildReleaseDate('dolp-0.778-0914')).toBeUndefined();
+    expect(buildReleaseDate()).toBeUndefined();
+  } finally {
+    if (previous === undefined) delete Bun.env.THALIA_RELEASE_DATE;
+    else Bun.env.THALIA_RELEASE_DATE = previous;
+  }
+});

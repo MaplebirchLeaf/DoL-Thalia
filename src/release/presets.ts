@@ -27,10 +27,15 @@ export async function readReleasePresets(path = RELEASE_PRESETS_SOURCE): Promise
 }
 
 export async function readReleasePreset(name: string, path?: string): Promise<ReleasePreset> {
-  const presets = await readReleasePresets(path);
-  const preset = presets.find(item => item.name === name);
-  if (!preset) throw new Error(`${RELEASE_PRESETS_SOURCE} has no preset named: ${name}`);
-  return preset;
+  return selectReleasePresets(await readReleasePresets(path), [name])[0];
+}
+
+export function selectReleasePresets(presets: ReleasePreset[], names: string[]): ReleasePreset[] {
+  return [...new Set(names)].map(name => {
+    const preset = presets.find(item => item.name === name);
+    if (!preset) throw new Error(`Unknown release preset: ${name}`);
+    return preset;
+  });
 }
 
 export function validateReleasePresets(presets: ReleasePreset[], source = RELEASE_PRESETS_SOURCE): void {

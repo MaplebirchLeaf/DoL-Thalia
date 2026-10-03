@@ -1,6 +1,19 @@
 [
   {
-    "tag": "0.5.10.12-0626",
-    "presets": ["chs", "chs-au-a", "chs-au-f", "chs-au-m", "chs-goose-f", "chs-goose-m", "vanilla"]
+    "tag": "0.5.12.13-1003",
+    "presets": [
+      "thalia",
+      "goose-f-mysterious",
+      "goose-m-mysterious",
+      "goose-f",
+      "goose-m",
+      "mysterious",
+      "chs",
+      "chs-goose-f-mysterious",
+      "chs-goose-m-mysterious",
+      "chs-goose-f",
+      "chs-goose-m",
+      "chs-mysterious"
+    ]
   }
 ]

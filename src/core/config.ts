@@ -148,6 +148,7 @@ function validatePositiveInteger(value: unknown, name: string): void {
 
 export function withGameVariant(config: ThaliaConfig, game: string | undefined): ThaliaConfig {
   const variant = game && game !== 'standard' ? config.games?.[game] : undefined;
+  if (game && game !== 'standard' && !variant) throw new Error(`Unknown game variant: ${game}`);
   if (!variant) return config;
 
   const modSources = config.mod_sources ? mapModSourcesForVariant(config.mod_sources, game!) : config.mod_sources;

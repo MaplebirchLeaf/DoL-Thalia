@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { formatSeconds, logDone, logWarn } from '../core/log';
 import { runTimedStep } from '../core/steps';
-import { readReleasePreset, readReleasePresets, type ReleasePreset } from '../release/presets';
+import { readReleasePresets, selectReleasePresets, type ReleasePreset } from '../release/presets';
 import { discoverGameVersions, withGameVersion } from '../sources/game-input';
 import { syncModSources } from '../sources/mod-sources';
 import { syncGitRepository } from '../sources/vendor';
@@ -69,20 +69,9 @@ export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOp
 }
 
 async function readBuildPresets(defaultPresetName: string, selectedPresetNames?: string[], path?: string): Promise<ReleasePreset[]> {
-  if (selectedPresetNames?.length) {
-    const presets = await readReleasePresets(path);
-    const selected = selectedPresetNames.map(name => {
-      const preset = presets.find(item => item.name === name);
-      if (!preset) throw new Error(`input/modList.json has no preset named: ${name}`);
-      return preset;
-    });
-    return [...new Map(selected.map(preset => [preset.name, preset])).values()];
-  }
-
-  const defaultPreset = await readReleasePreset(defaultPresetName, path);
-  const presets = (await readReleasePresets(path)).filter(preset => preset.name !== defaultPresetName);
-  presets.push(defaultPreset);
-  return presets;
+  const presets = await readReleasePresets(path);
+  if (selectedPresetNames?.length) return selectReleasePresets(presets, selectedPresetNames);
+  return [...presets.filter(preset => preset.name !== defaultPresetName), ...selectReleasePresets(presets, [defaultPresetName])];
 }
 
 function shouldCleanFullRelease(options: BuildReleaseOptions): boolean {

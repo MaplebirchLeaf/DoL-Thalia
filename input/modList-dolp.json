@@ -29,30 +29,6 @@
         "Masc Goose Compilation",
         "Mysterious"
       ]
-    },
-    {
-      "name": "goose-f",
-      "title_en": "Fem Goose",
-      "title_cn": "女性 Goose",
-      "mods": [
-        "Fem Goose Compilation"
-      ]
-    },
-    {
-      "name": "goose-m",
-      "title_en": "Masc Goose",
-      "title_cn": "男性 Goose",
-      "mods": [
-        "Masc Goose Compilation"
-      ]
-    },
-    {
-      "name": "mysterious",
-      "title_en": "Mysterious Combat",
-      "title_cn": "Mysterious 战斗美化",
-      "mods": [
-        "Mysterious"
-      ]
     }
   ]
 }

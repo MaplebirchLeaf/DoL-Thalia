@@ -4,7 +4,7 @@ import type { LocalizedSiteCopy } from '../content';
 import { releasePresets, releaseVersions } from '../data';
 import { presetTitle } from '../presets';
 import { releaseAssetUrl, releaseEdition, releaseTag } from '../releases';
-import type { Language, ReleasePreset, SiteRelease } from '../types';
+import type { Language } from '../types';
 
 const props = defineProps<{
   localizedText: LocalizedSiteCopy;
@@ -13,21 +13,21 @@ const props = defineProps<{
 
 const expandedTag = ref<string | undefined>();
 
-const groups = computed(() =>
-  (['standard', 'dolp'] as const).map(edition => ({
+const groups = computed(() => {
+  const versions = releaseVersions.map(version => ({
+    tag: version.tag,
+    presets: releasePresets.filter(preset => !version.presets || version.presets.includes(preset.name)).map(preset => ({ name: preset.name, title: presetTitle(preset, props.activeLanguage) }))
+  }));
+
+  return (['standard', 'dolp'] as const).map(edition => ({
     edition,
     label: edition === 'dolp' ? props.localizedText.editionDolp : props.localizedText.editionStandard,
-    versions: releaseVersions.filter(version => releaseEdition(version.tag) === edition)
-  }))
-);
+    versions: versions.filter(version => releaseEdition(version.tag) === edition)
+  }));
+});
 
-function presetsFor(version: SiteRelease): ReleasePreset[] {
-  if (!version.presets) return releasePresets;
-  return releasePresets.filter(preset => version.presets?.includes(preset.name));
-}
-
-function toggleVersion(version: SiteRelease) {
-  expandedTag.value = expandedTag.value === version.tag ? undefined : version.tag;
+function toggleVersion(tag: string) {
+  expandedTag.value = expandedTag.value === tag ? undefined : tag;
 }
 </script>
 
@@ -44,7 +44,7 @@ function toggleVersion(version: SiteRelease) {
 
       <div v-if="group.versions.length" class="version-list">
         <article v-for="version in group.versions" :key="version.tag" :class="{ selected: expandedTag === version.tag }" class="version-row">
-          <button class="version-summary" type="button" :aria-controls="`version-detail-${version.tag}`" :aria-expanded="expandedTag === version.tag" @click="toggleVersion(version)">
+          <button class="version-summary" type="button" :aria-controls="`version-detail-${version.tag}`" :aria-expanded="expandedTag === version.tag" @click="toggleVersion(version.tag)">
             <span class="version-summary-text">
               <span class="version-tag">{{ releaseTag(version.tag) }}</span>
               <span class="version-hint">{{ localizedText.versionListHint }}</span>
@@ -58,18 +58,18 @@ function toggleVersion(version: SiteRelease) {
           </button>
           <Transition name="drawer">
             <div v-if="expandedTag === version.tag" :id="`version-detail-${version.tag}`" class="version-detail-shell">
-              <div v-if="presetsFor(version).length" class="download-table-lite">
+              <div v-if="version.presets.length" class="download-table-lite">
                 <div class="download-row head">
                   <span>{{ localizedText.versionChoice }}</span>
                   <span>ZIP</span>
                   <span>APK</span>
                 </div>
-                <div v-for="preset in presetsFor(version)" :key="preset.name" class="download-row">
-                  <span class="download-title">{{ presetTitle(preset, activeLanguage) }}</span>
-                  <a :href="releaseAssetUrl(version.tag, preset.name, 'zip')" :aria-label="`${presetTitle(preset, activeLanguage)} — ${localizedText.downloadZip}`">
+                <div v-for="preset in version.presets" :key="preset.name" class="download-row">
+                  <span class="download-title">{{ preset.title }}</span>
+                  <a :href="releaseAssetUrl(version.tag, preset.name, 'zip')" :aria-label="`${preset.title} — ${localizedText.downloadZip}`">
                     {{ localizedText.download }}
                   </a>
-                  <a :href="releaseAssetUrl(version.tag, preset.name, 'apk')" :aria-label="`${presetTitle(preset, activeLanguage)} — ${localizedText.downloadApk}`">
+                  <a :href="releaseAssetUrl(version.tag, preset.name, 'apk')" :aria-label="`${preset.title} — ${localizedText.downloadApk}`">
                     {{ localizedText.download }}
                   </a>
                 </div>

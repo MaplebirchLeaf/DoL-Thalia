@@ -73,6 +73,16 @@ HTML/ZIP 的 Worker 地址通过仓库 Actions Variable `THALIA_MOD_PROXY_URL` �
 
 常用入口和参数见[命令参考](commands.md)，APK 环境见[Android APK 环境](android-build.md)。
 
+## 站点与在线游戏
+
+`site:data` 只同步组合和 GitHub Release 元数据。`site:build` 执行 `site:data` 后用 Vite 构建站点，使用已有的 `site/public/` 文件；这两个命令不会下载或构建游戏。`site:play` 显式构建 `play/en/index.html` 和 `play/chs/index.html`，Release 工作流按 `site:play` → `site:build` → 在线产物审计的顺序部署 Pages。
+
+两个在线入口均为原版游戏加 20 个 ModLoader 内置模组，中英文使用各自的 SugarCube i10n。中文入口只汉化 SugarCube UI，不预装剧情汉化 `ModI18N` 或其他外部模组。
+
+## 语言职责
+
+TypeScript 的 `src/core/`、`src/sources/` 和 `src/builders/` 负责配置、来源与构建，`src/release/plan.ts` 和 `protocol.ts` 为构建、工作流和站点提供同一发布计划及标签／附件协议。Vue/TypeScript 页面只呈现数据；Python 的 `tools/audit_release.py` 独立只读审计成品归档；Java 的 Cordova 插件负责原生下载与 WebView 桥接。功能按职责放置，既有实现语言保持不变。
+
 ## 当前发布组合
 
-标准版使用 `input/modList.json`，提供六套素材组合的英文与汉化版本。DoLP 使用 `input/modList-dolp.json`，只提供六套英文组合，不包含 ModI18N。素材组合为基础、Mysterious、女性 Goose、男性 Goose、女性 Goose＋Mysterious、男性 Goose＋Mysterious。AU 已移出当前发布配置。
+标准版使用 `input/modList.json`，提供基础整合、女性 Goose＋Mysterious、男性 Goose＋Mysterious三种组合的英文与汉化版本，共 6 套配置。DoLP 使用 `input/modList-dolp.json`，提供这三种组合的英文版本，不包含 ModI18N。女性 Goose、男性 Goose 和 Mysterious 的素材源仍用于组合包。

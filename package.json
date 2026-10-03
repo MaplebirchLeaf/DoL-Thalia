@@ -17,7 +17,9 @@
     "test:audit": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "audit": "python3 tools/audit_release.py --dist dist",
     "site:dev": "vite --config site/vite.config.ts --host 127.0.0.1",
-    "site:build": "bun run src/commands/site-build-data.ts && vite build --config site/vite.config.ts",
+    "site:data": "bun run src/commands/site-build-data.ts",
+    "site:play": "bun run src/commands/build-online-play.ts",
+    "site:build": "bun run site:data && vite build --config site/vite.config.ts",
     "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
     "fix": "oxlint --fix && oxfmt",
     "build:ready": "bun run src/commands/build-ready.ts"

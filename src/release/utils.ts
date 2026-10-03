@@ -1,22 +1,9 @@
-export function safeFileName(value: string): string {
-  return (
-    value
-      .trim()
-      .replace(/[^\w.-]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'package'
-  );
-}
+import { parseReleaseVersion } from './protocol';
+
+export { buildReleaseAssetName, parseReleaseVersion, safeFileName, type ParsedReleaseVersion } from './protocol';
 
 export function escapeXml(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
-}
-
-export function buildReleaseAssetName(projectName: string, gameVersion: string, modListName: string, date?: string): string {
-  const releaseVersion = parseReleaseVersion(gameVersion);
-  const releaseDate = date?.trim() || releaseVersion.releaseDate;
-  const parts = [projectName, releaseVersion.gameVersion, modListName];
-  if (releaseDate) parts.push(releaseDate);
-  return parts.map(safeFileName).join('-');
 }
 
 export function buildReleaseDate(value?: string): string | undefined {
@@ -26,18 +13,4 @@ export function buildReleaseDate(value?: string): string | undefined {
   if (!trimmed) return undefined;
   if (/^\d{4}$/.test(trimmed)) return trimmed;
   return parseReleaseVersion(trimmed).releaseDate;
-}
-
-export interface ParsedReleaseVersion {
-  gameVersion: string;
-  releaseDate?: string;
-}
-
-export function parseReleaseVersion(version: string): ParsedReleaseVersion {
-  const match = version.trim().match(/^(\d+\.\d+\.\d+\.\d+)(?:-(\d{4}))?$/);
-  if (!match) return { gameVersion: version };
-  return {
-    gameVersion: match[1],
-    releaseDate: match[2]
-  };
 }

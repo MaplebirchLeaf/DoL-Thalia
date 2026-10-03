@@ -20,8 +20,6 @@ export interface LocalizedSiteCopy {
   versionListHint: string;
   viewDoLDownloads: string;
   viewDoLPDownloads: string;
-  selectVersion: string;
-  showVersions: string;
   versionChoice: string;
   navItems: Array<{ key: PageKey; label: string }>;
   homeNotices: HomeNotice[];
@@ -55,8 +53,6 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     versionListHint: '展开查看该版本的全部下载配置',
     viewDoLDownloads: '查看 DoL 下载',
     viewDoLPDownloads: '查看 DoLP 下载',
-    selectVersion: '展开下载列表',
-    showVersions: '查看下载版本',
     versionChoice: '下载配置',
     navItems: [
       { key: 'home', label: '首页' },
@@ -136,8 +132,6 @@ export const LOCALIZED_SITE_COPY: Record<Language, LocalizedSiteCopy> = {
     versionListHint: 'Expand to see every package for this version',
     viewDoLDownloads: 'Browse DoL downloads',
     viewDoLPDownloads: 'Browse DoLP downloads',
-    selectVersion: 'Show downloads',
-    showVersions: 'Browse downloads',
     versionChoice: 'Package',
     navItems: [
       { key: 'home', label: 'Home' },

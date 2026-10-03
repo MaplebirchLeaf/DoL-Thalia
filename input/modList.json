@@ -31,30 +31,6 @@
       ]
     },
     {
-      "name": "goose-f",
-      "title_en": "Fem Goose",
-      "title_cn": "女性 Goose",
-      "mods": [
-        "Fem Goose Compilation"
-      ]
-    },
-    {
-      "name": "goose-m",
-      "title_en": "Masc Goose",
-      "title_cn": "男性 Goose",
-      "mods": [
-        "Masc Goose Compilation"
-      ]
-    },
-    {
-      "name": "mysterious",
-      "title_en": "Mysterious Combat",
-      "title_cn": "Mysterious 战斗美化",
-      "mods": [
-        "Mysterious"
-      ]
-    },
-    {
       "name": "chs",
       "title_en": "Thalia (CHS)",
       "title_cn": "Thalia 基础整合版（汉化）",
@@ -79,33 +55,6 @@
       "mods": [
         "ModI18N",
         "Masc Goose Compilation",
-        "Mysterious"
-      ]
-    },
-    {
-      "name": "chs-goose-f",
-      "title_en": "Fem Goose (CHS)",
-      "title_cn": "女性 Goose（汉化）",
-      "mods": [
-        "ModI18N",
-        "Fem Goose Compilation"
-      ]
-    },
-    {
-      "name": "chs-goose-m",
-      "title_en": "Masc Goose (CHS)",
-      "title_cn": "男性 Goose（汉化）",
-      "mods": [
-        "ModI18N",
-        "Masc Goose Compilation"
-      ]
-    },
-    {
-      "name": "chs-mysterious",
-      "title_en": "Mysterious Combat (CHS)",
-      "title_cn": "Mysterious 战斗美化（汉化）",
-      "mods": [
-        "ModI18N",
         "Mysterious"
       ]
     }

@@ -34,40 +34,18 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
       - name: Validate release tag and source commit
-        shell: bash
+        run: bun run src/commands/release-plan.ts
         env:
           INPUT_TAG: ${{ inputs.tag }}
-        run: |
-          release_tag="$INPUT_TAG"
-          if [ -z "$release_tag" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            release_tag="$GITHUB_REF_NAME"
-          fi
-          git check-ref-format "refs/tags/$release_tag" || { echo "Invalid release tag: $release_tag" >&2; exit 1; }
-
-          presets="thalia,goose-f-mysterious,goose-m-mysterious,goose-f,goose-m,mysterious"
-          if [[ "$release_tag" =~ ^v([0-9]+(\.[0-9]+){3})(-([0-9]{4}))?$ ]]; then
-            game="standard"
-            game_version="${BASH_REMATCH[1]}"
-            release_date="${BASH_REMATCH[4]}"
-            presets="$presets,chs,chs-goose-f-mysterious,chs-goose-m-mysterious,chs-goose-f,chs-goose-m,chs-mysterious"
-          elif [[ "$release_tag" =~ ^vdolp-([0-9]+(\.[0-9]+){1,3})(-([0-9]{4}))?$ ]]; then
-            game="dolp"
-            game_version="${BASH_REMATCH[1]}"
-            release_date="${BASH_REMATCH[4]}"
-          else
-            echo "Expected v<four-part-version>[-MMDD] or vdolp-<version>[-MMDD], found: $release_tag" >&2
-            exit 1
-          fi
-
-          source_commit="$(git rev-parse HEAD)"
-          if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
-            tag_commit="$(git rev-parse "refs/tags/$release_tag^{commit}")"
-            test "$tag_commit" = "$source_commit" || { echo "Release tag $release_tag points to $tag_commit, but checkout is $source_commit." >&2; exit 1; }
-          fi
-
-          printf '%s\n' "THALIA_RELEASE_TAG=$release_tag" "THALIA_GAME=$game" "THALIA_GAME_VERSION=$game_version" "THALIA_RELEASE_DATE=$release_date" "THALIA_PRESETS=$presets" >> "$GITHUB_ENV"
-          echo "Release: $release_tag ($game $game_version at $source_commit)"
 
       - name: Check private resource access
         env:
@@ -78,11 +56,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.2
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -104,9 +77,6 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
       - name: Check build tools and native downloader
         run: |
           bun run check
@@ -115,12 +85,7 @@ jobs:
           bun run test:native
 
       - name: Build release assets
-        run: |
-          if [ "$THALIA_GAME" = "dolp" ]; then
-            bun run build:all --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION" --presets="$THALIA_PRESETS" --targets=zip,apk
-          else
-            bun run build:ready --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION" --presets="$THALIA_PRESETS" --targets=zip,apk
-          fi
+        run: bun run build:ready --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION" --presets="$THALIA_PRESETS" --targets=zip,apk
         env:
           GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
           THALIA_MOD_PROXY_URL: ${{ vars.THALIA_MOD_PROXY_URL }}
@@ -153,6 +118,9 @@ jobs:
             gh release create "$THALIA_RELEASE_TAG" --verify-tag --title "$THALIA_RELEASE_TAG" --draft --generate-notes
           gh release upload "$THALIA_RELEASE_TAG" "${assets[@]}" --clobber
           gh release edit "$THALIA_RELEASE_TAG" --draft=false
+
+      - name: Build online play
+        run: bun run site:play
 
       - name: Build site
         run: bun run site:build

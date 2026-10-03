@@ -15,9 +15,11 @@ This is an unofficial third-party project. It is not maintained or endorsed by t
 
 Use the [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/) to compare packages, or download files directly from [GitHub Releases](https://github.com/MaplebirchLeaf/DoL-Thalia/releases).
 
+Release presets are Thalia, Fem Goose + Mysterious, and Masc Goose + Mysterious. Standard DoL provides English and Chinese versions of each preset: 6 configurations, each with a ZIP and an APK. DoLP provides the 3 English configurations when its game version is compatible with the bundled mods.
+
 - **ZIP:** Extract the archive and open the included HTML file in a browser. A release ZIP is a complete game package; do not import it as a ModLoader mod.
 - **APK:** Install it on an Android device. Export your saves before updating or uninstalling the app.
-- **Online:** Intended for quick access and may only offer the default preset.
+- **Online:** Vanilla game with 20 bundled ModLoader mods. English and Chinese entries use separate SugarCube i10n; the Chinese entry translates the UI but does not preinstall story localization (`ModI18N`).
 
 Browser and Android WebView saves depend on local site data. Export your saves before clearing browser data, uninstalling an APK, switching releases, or moving to another device.
 
@@ -56,7 +58,7 @@ bun run build:env
 bun run build:html
 ```
 
-The standard game can be built from a ZIP placed under `input/game/`. When no matching local ZIP exists, the standard build can fetch and compile the configured upstream game version. DoLP packages must be placed under `input/game-dolp/`.
+The standard game can be built from a ZIP placed under `input/game/`. When no matching local ZIP exists, the standard build can fetch and compile the configured upstream game version. DoLP uses `input/game-dolp/` first, then downloads the matching `DoLP_Vanilla` package from the official GitGud Release.
 
 ## Commands
 
@@ -69,7 +71,9 @@ The standard game can be built from a ZIP placed under `input/game/`. When no ma
 | `bun run build:all`  | Build HTML, ZIP, and APK release targets                            |
 | `bun run check`      | Run TypeScript, lint, and formatting checks                         |
 | `bun run site:dev`   | Start the release site locally                                      |
-| `bun run site:build` | Build the release site                                              |
+| `bun run site:data`  | Synchronize preset and published release metadata                   |
+| `bun run site:play`  | Explicitly build English and Chinese online game entries            |
+| `bun run site:build` | Synchronize metadata and build the site with Vite                   |
 
 Examples:
 
@@ -89,11 +93,16 @@ See the [documentation index](docs/README.md) for commands, the build pipeline, 
 | `src/commands/`      | Command-line entry points and option parsing                             |
 | `src/builders/`      | Story, ModLoader, HTML, ZIP, and APK build stages                        |
 | `src/sources/`       | Game, mod, and upstream source synchronization                           |
+| `src/release/`       | Shared release plan, tag and asset naming protocol, and verification     |
 | `input/modList.json` | Release preset definitions                                               |
 | `thalia.config.toml` | Game variants, source locations, outputs, and Android toolchain versions |
 | `site/`              | DoL-Thalia Hub source and release metadata                               |
 
 Generated files are written to `dist/`; local caches and generated Cordova projects are stored under `.cache/`.
+
+TypeScript owns configuration, source resolution, builds, and the shared release plan/protocol. Vue/TypeScript pages present that data. Python independently audits finished archives without modifying them; Java implements the Cordova native downloader and WebView bridge.
+
+`site:build` builds the page from metadata and existing public files. To include updated online games, run `site:play` first; the Release workflow performs this step explicitly and audits both entries before deploying Pages.
 
 ## Related projects
 

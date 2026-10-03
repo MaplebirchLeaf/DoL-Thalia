@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readReleasePresets } from '../src/release/presets';
+import { readReleasePresets, selectReleasePresets } from '../src/release/presets';
 
 test('base mods apply to each preset in order, while the existing array format stays valid', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'thalia-presets-'));
@@ -31,4 +31,13 @@ test('base mods apply to each preset in order, while the existing array format s
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('preset selection preserves caller order, removes duplicates and rejects missing names', () => {
+  const presets = [
+    { name: 'first', mods: [] },
+    { name: 'second', mods: [] }
+  ];
+  expect(selectReleasePresets(presets, ['second', 'first', 'second'])).toEqual([presets[1], presets[0]]);
+  expect(() => selectReleasePresets(presets, ['missing'])).toThrow('Unknown release preset: missing');
 });
