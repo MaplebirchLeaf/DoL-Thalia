@@ -13,6 +13,7 @@ import { type ReleasePreset, readReleasePreset } from '../release/presets';
 import { resolveVanillaGameInput } from '../sources/vanilla-game';
 import { resolveDoLPGameZip } from '../sources/dolp-game';
 import { splitHtmlAssets } from './split-html-assets';
+import { withStoryFormatConfig } from './story-format-config';
 
 const HTML_CACHE_DIR = '.cache/html';
 
@@ -30,6 +31,7 @@ interface GameInput {
 
 export interface BuildHtmlOptions {
   embedIndexDBMods?: boolean;
+  i10nHook?: boolean;
   minify?: boolean;
   modloader?: boolean;
   releasePreset?: ReleasePreset;
@@ -46,10 +48,11 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
   const buildOptions: BuildHtmlOptions = 'mods' in options ? { releasePreset: options } : options;
   const embedIndexDBMods = buildOptions.embedIndexDBMods ?? true;
   const includeModLoader = buildOptions.modloader ?? true;
+  const preset = includeModLoader && embedIndexDBMods ? (buildOptions.releasePreset ?? (await readReleasePreset(config.game.default_mod_list, config.paths.mod_list))) : undefined;
   const minifyHtml = buildOptions.minify ?? true;
   const outputHtml = resolve(config.paths.output_html);
   const outputDir = dirname(outputHtml);
-  const storyFormat = resolve(config.paths.story_format);
+  const storyFormat = resolve(withStoryFormatConfig(config, { modloaderHook: includeModLoader, i10nHook: buildOptions.i10nHook ?? preset?.mods.includes('ModI18N') === true }).paths.story_format);
   const inputModsDir = resolve(config.paths.builtin_mods);
   const modLoaderRoot = resolve(config.upstreams.modloader.path);
   const beforeSc2 = join(modLoaderRoot, 'dist-BeforeSC2/BeforeSC2.js');
@@ -82,8 +85,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const preset = buildOptions.releasePreset ?? (await readReleasePreset(config.game.default_mod_list, config.paths.mod_list));
-      const indexedDbModFiles = embedIndexDBMods ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
+      const indexedDbModFiles = preset ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
       await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });

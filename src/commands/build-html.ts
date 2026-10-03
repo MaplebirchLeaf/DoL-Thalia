@@ -16,6 +16,11 @@ const preset = await readReleasePreset(options.preset ?? buildConfig.game.defaul
 options.html.releasePreset = preset;
 
 if (options.prepare !== 'skip') {
+  options.prepare.storyFormat = {
+    ...options.prepare.storyFormat,
+    modloaderHook: options.html.modloader !== false,
+    i10nHook: options.html.modloader !== false && options.html.embedIndexDBMods !== false && preset.mods.includes('ModI18N')
+  };
   await prepareLocalBuild(buildConfig, options.prepare);
   if (options.html.modloader !== false && options.html.embedIndexDBMods !== false && !options.prepareExplicit) await syncModSources(buildConfig, preset.mods);
 }

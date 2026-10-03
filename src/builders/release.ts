@@ -42,7 +42,9 @@ export async function buildRelease(config: ThaliaConfig, options: BuildReleaseOp
   if (!options.skipPrepare) {
     await runTimedStep('Sync SugarCube', () => syncGitRepository(config.upstreams.sugarcube_vrelnir));
     await runTimedStep('Sync ModLoader', () => syncGitRepository(config.upstreams.modloader));
-    await runTimedStep('Build Story Format', () => buildStoryFormat(config));
+    for (const i10nHook of new Set(presets.map(preset => preset.mods.includes('ModI18N')))) {
+      await runTimedStep(`Build ${i10nHook ? 'Chinese' : 'English'} Story Format`, () => buildStoryFormat(config, { i10nHook }));
+    }
     await runTimedStep('Build ModLoader tools', () => buildModLoaderTools(config));
     await runTimedStep('Build bundled ModLoader mods', () => syncAndBuildBuiltinMods(config));
   }

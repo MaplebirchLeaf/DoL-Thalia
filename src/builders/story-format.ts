@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { minifyJs } from '../core/minify';
 import { run } from '../core/process';
+import { withStoryFormatConfig } from './story-format-config';
 
 const SC2_SOURCE_ENTRY = 'src/sugarcube.js';
 const SC2_FORMAT_OUTPUT = 'build/twine2/sugarcube-2/format.js';
@@ -110,7 +111,7 @@ export async function buildStoryFormat(config: ThaliaConfig, options: BuildStory
   const sugarcubeRoot = config.upstreams.sugarcube_vrelnir.path;
   const sourceEntry = join(sugarcubeRoot, SC2_SOURCE_ENTRY);
   const sourceFormat = join(sugarcubeRoot, SC2_FORMAT_OUTPUT);
-  const outputFormat = config.paths.story_format;
+  const outputFormat = withStoryFormatConfig(config, resolvedOptions).paths.story_format;
   await installDependencies(sugarcubeRoot);
   const restoreSugarCubeSource = await patchSugarCubeSource(sourceEntry, resolvedOptions);
 
@@ -129,7 +130,7 @@ export async function buildStoryFormat(config: ThaliaConfig, options: BuildStory
 function resolveBuildStoryFormatOptions(options: BuildStoryFormatOptions): ResolvedBuildStoryFormatOptions {
   return {
     modloaderHook: options.modloaderHook ?? true,
-    i10nHook: options.i10nHook ?? true
+    i10nHook: options.i10nHook ?? false
   };
 }
 
@@ -181,25 +182,23 @@ function createStartupWithModLoader(startupBody: string, options: ResolvedBuildS
   const sections = [
     `'use strict';`,
     `/* ${MODLOADER_HOOK_MARKER} */`,
-    createMainStartSource(startupBody),
+    createMainStartSource(startupBody, options.i10nHook),
     options.i10nHook ? createI10nHookSource() : '',
-    createModLoaderStartSource(options.i10nHook)
+    createModLoaderStartSource()
   ];
   return wrapStartupSource(sections);
 }
 
 function createStartupWithoutModLoader(startupBody: string, options: ResolvedBuildStoryFormatOptions): string {
-  const sections = [`'use strict';`, startupBody, options.i10nHook ? `${createI10nHookSource()}\ninitI10n();` : ''];
+  const sections = [`'use strict';`, options.i10nHook ? `${createI10nHookSource()}\ninitI10n();` : '', startupBody];
   return wrapStartupSource(sections);
 }
 
-function createMainStartSource(startupBody: string): string {
-  return [`const mainStart = () => {`, indent(startupBody, '\t'), '};'].join('\n');
+function createMainStartSource(startupBody: string, withI10n: boolean): string {
+  return [`const mainStart = () => {`, withI10n ? '\tinitI10n();' : '', indent(startupBody, '\t'), '};'].filter(Boolean).join('\n');
 }
 
-function createModLoaderStartSource(withI10n: boolean): string {
-  const afterPreload = withI10n ? ".then(() => { thaliaBootLog('preload-done'); mainStart(); initI10n(); })" : ".then(() => { thaliaBootLog('preload-done'); mainStart(); })";
-  const fallback = withI10n ? ['mainStart();', 'initI10n();'] : ['mainStart();'];
+function createModLoaderStartSource(): string {
   return [
     `if (typeof window.modSC2DataManager !== 'undefined') {`,
     'var thaliaBootPrev = null;',
@@ -209,14 +208,14 @@ function createModLoaderStartSource(withI10n: boolean): string {
     "\tthaliaBootLog('modloader-start');",
     '\twindow.modSC2DataManager.startInit()',
     "\t\t.then(() => { thaliaBootLog('modloader-init-done'); return window.jsPreloader.startLoad(); })",
-    `\t\t${afterPreload}`,
+    "\t\t.then(() => { thaliaBootLog('preload-done'); mainStart(); })",
     '\t\t.catch(err => {',
     "\t\t\tconsole.error('ModLoader init failed, starting game without it:', err);",
     "\t\t\tthaliaBootLog('modloader-failed-fallback');",
-    "\t\t\ttry { mainStart(); if (typeof initI10n === 'function') initI10n(); } catch (fallbackErr) { console.error(fallbackErr); }",
+    '\t\t\ttry { mainStart(); } catch (fallbackErr) { console.error(fallbackErr); }',
     '\t\t});',
     '} else {',
-    indent(fallback.join('\n'), '\t'),
+    '\tmainStart();',
     '}'
   ].join('\n');
 }
@@ -229,14 +228,10 @@ function wrapStartupSource(sections: string[]): string {
 function createI10nHookSource(): string {
   // The Chinese localization expects these labels before SugarCube finishes UI setup.
   return [
-    'var shouldApplyChineseI10n = () => {',
-    '\tconst languages = Array.isArray(navigator.languages) && navigator.languages.length > 0 ? navigator.languages : [navigator.language];',
-    "\treturn languages.some(language => /^zh(?:-|$)/i.test(language || ''));",
-    '};',
     'var initI10n = () => {',
     `\t/* ${I10N_HOOK_MARKER} */`,
+    `\tObject.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});`,
     "\tif (typeof window.initI10n === 'function') window.initI10n(l10nStrings);",
-    `\tif (shouldApplyChineseI10n()) Object.assign(l10nStrings, ${JSON.stringify(CHINESE_IDB_L10N_COMPAT)});`,
     '};'
   ].join('\n');
 }
@@ -245,11 +240,11 @@ function removeExistingI10nHook(source: string): string {
   let patched = source;
   const shouldApplyIndex = patched.search(/\n?\s*var\s+shouldApplyChineseI10n\s*=\s*\(\)\s*=>\s*\{/);
   const initIndex = patched.search(/\n?\s*var\s+initI10n\s*=\s*\(\)\s*=>\s*\{/);
-  if (shouldApplyIndex !== -1 && initIndex !== -1) {
+  if (initIndex !== -1) {
     const initBodyStart = patched.indexOf('{', initIndex);
     const initBodyEnd = findMatchingBrace(patched, initBodyStart);
     const initStatementEnd = patched.indexOf(';', initBodyEnd);
-    if (initStatementEnd !== -1) patched = patched.slice(0, shouldApplyIndex) + patched.slice(initStatementEnd + 1);
+    if (initStatementEnd !== -1) patched = patched.slice(0, shouldApplyIndex === -1 ? initIndex : shouldApplyIndex) + patched.slice(initStatementEnd + 1);
   }
   patched = patched.replace(/\.then\(\(\) => \{\s*mainStart\(\);\s*initI10n\(\);\s*\}\)/g, '.then(() => mainStart())');
   patched = patched.replace(/\n\s*initI10n\(\);/g, '');
