@@ -85,7 +85,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const indexedDbModFiles = preset ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods) : [];
+      const indexedDbModFiles = preset ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods, config.mod_sources) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
       await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });
@@ -202,27 +202,30 @@ async function collectFiles(dir: string, extension: string, result: string[]): P
   }
 }
 
-async function listIndexedDbModFiles(modsRoot: string, gameVersion: string, modSourceNames: string[]): Promise<string[]> {
+async function listIndexedDbModFiles(modsRoot: string, gameVersion: string, modSourceNames: string[], modSources: ThaliaConfig['mod_sources']): Promise<string[]> {
   const result: string[] = [];
   const versionDir = join(modsRoot, gameVersion);
   for (const sourceName of modSourceNames) {
-    const sourceFiles = await findModSourceFiles(versionDir, sourceName);
+    const sourceFiles = await findModSourceFiles(versionDir, sourceName, modSources?.[sourceName]?.asset_keywords ?? []);
     if (sourceFiles.length === 0) throw new Error(`Missing mod source files: ${sourceName} in ${versionDir}`);
     result.push(...sourceFiles.sort());
   }
   return result;
 }
 
-async function findModSourceFiles(versionDir: string, sourceName: string): Promise<string[]> {
-  const result: string[] = [];
+async function findModSourceFiles(versionDir: string, sourceName: string, assetKeywords: string[]): Promise<string[]> {
   const version = basename(versionDir);
   const entries = existsSync(versionDir) ? await readdir(versionDir, { withFileTypes: true }) : [];
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.includes(sourceName) || !isIndexedDbModFile(entry.name)) continue;
-    if (entry.name.startsWith(`${sourceName}-`) && entry.name.includes(version) && !entry.name.startsWith(`${sourceName}-${version}`)) continue;
-    result.push(join(versionDir, entry.name));
-  }
-  return [...new Set(result)];
+  const matching = (keywords: string[]) =>
+    entries
+      .filter(entry => entry.isFile() && isIndexedDbModFile(entry.name))
+      .filter(entry =>
+        keywords.some(keyword => entry.name.includes(keyword) && !(entry.name.startsWith(`${keyword}-`) && entry.name.includes(version) && !entry.name.startsWith(`${keyword}-${version}`)))
+      )
+      .map(entry => join(versionDir, entry.name));
+  // A preset may select one asset from a multi-asset source (e.g. Deadwood's main or audio pack).
+  const configured = matching(assetKeywords.includes(sourceName) ? [sourceName] : assetKeywords);
+  return [...new Set(configured.length ? configured : matching([sourceName]))];
 }
 
 function isIndexedDbModFile(file: string): boolean {
