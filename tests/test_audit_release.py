@@ -56,6 +56,28 @@ class AuditHtmlTest(unittest.TestCase):
         report = self.audit(base64.b64encode(archive).decode(), [entry])
         self.assertIn('non-string data part', report.failures[0])
 
+    def test_online_play_accepts_only_twenty_bundled_mods_without_external_entries(self):
+        payload = base64.b64encode(self.archive()).decode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'index.html'
+            for count, extra, should_pass in [
+                (20, None, True),
+                (20, [], True),
+                (19, None, False),
+                (21, None, False),
+                (20, [self.indexed_entry(self.archive())], False),
+            ]:
+                html = f'window.modDataValueZipList = {json.dumps([payload] * count)};'
+                if extra is not None:
+                    html += f'window.modDataValueZipListIndexDB = {json.dumps(extra)};'
+                path.write_text(html, encoding='utf-8')
+                report = Report()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    audit_html(path, report, online_play=True)
+                self.assertEqual(not report.failures, should_pass)
+                if not should_pass:
+                    self.assertIn('exactly 20 bundled mods', report.failures[0])
+
     @staticmethod
     def archive():
         archive = io.BytesIO()

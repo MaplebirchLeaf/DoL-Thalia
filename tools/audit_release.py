@@ -77,13 +77,22 @@ def decode_base64(payload: str, label: str) -> bytes:
         raise ValueError(f"{label} is not valid base64: {error}") from error
 
 
-def audit_html(path: Path, report: Report) -> None:
+def audit_html(path: Path, report: Report, *, online_play: bool = False) -> None:
     print(f"HTML {path}")
     html = path.read_text(encoding="utf-8", errors="replace")
     report.note(f"{len(html):,} characters")
 
     bundled = load_json_assignment(html, BUNDLED_MOD_PATTERN, "window.modDataValueZipList")
-    indexed_db = load_json_assignment(html, INDEXED_DB_MOD_PATTERN, "window.modDataValueZipListIndexDB")
+    indexed_db = (
+        [] if online_play and not INDEXED_DB_MOD_PATTERN.search(html)
+        else load_json_assignment(html, INDEXED_DB_MOD_PATTERN, "window.modDataValueZipListIndexDB")
+    )
+
+    if online_play:
+        if len(bundled) != 20 or indexed_db:
+            report.fail("online play must contain exactly 20 bundled mods and no IndexedDB mod entries")
+        else:
+            report.ok("online play contains only the 20 bundled mods")
 
     if not bundled:
         report.fail("no bundled mods are embedded in the HTML")
@@ -308,7 +317,10 @@ def main() -> int:
     parser.add_argument("--zip", help="release ZIP package to verify")
     parser.add_argument("--apk", help="release APK package to verify")
     parser.add_argument("--dist", help="verify every artifact under this dist directory")
+    parser.add_argument("--online-play", action="store_true", help="require 20 bundled mods and no preinstalled external mods")
     args = parser.parse_args()
+    if args.online_play and (not args.html or args.dist or args.zip or args.apk):
+        parser.error("--online-play requires a single --html target")
 
     targets = resolve_targets(args)
     if not targets:
@@ -320,7 +332,7 @@ def main() -> int:
             report.fail(f"missing artifact: {path}")
             continue
         if kind == "html":
-            audit_html(path, report)
+            audit_html(path, report, online_play=args.online_play)
         elif kind == "zip":
             audit_zip(path, report)
         else:

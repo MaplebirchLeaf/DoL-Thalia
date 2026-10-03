@@ -14,7 +14,7 @@ const activeLanguage = ref<Language>(detectInitialLanguage());
 const isBackTopVisible = ref(false);
 
 const baseUrl = import.meta.env.BASE_URL;
-const playUrl = `${baseUrl}play/index.html`;
+const playUrl = computed(() => `${baseUrl}play/${activeLanguage.value === 'zh' ? 'chs' : 'en'}/index.html`);
 const iconUrl = `${baseUrl}assets/icon.png`;
 const availableLanguages: Language[] = ['zh', 'en'];
 const localizedText = computed(() => LOCALIZED_SITE_COPY[activeLanguage.value]);

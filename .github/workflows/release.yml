@@ -161,6 +161,11 @@ jobs:
       - name: Build site
         run: bun run site:build
 
+      - name: Verify online play contains only bundled mods
+        run: |
+          python3 tools/audit_release.py --html dist/site/play/en/index.html --online-play
+          python3 tools/audit_release.py --html dist/site/play/chs/index.html --online-play
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

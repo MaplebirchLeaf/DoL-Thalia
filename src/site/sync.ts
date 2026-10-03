@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { buildHtml } from '../builders/html';
 import { prepareLocalBuild } from '../builders/prepare';
@@ -51,7 +50,7 @@ function renderInlineArray(values: unknown[]): string {
 
 const RELEASE_PRESETS_SITE_DATA = 'site/data/release.json';
 const RELEASE_VERSIONS_SITE_DATA = 'site/data/versions.json';
-const PLAY_INDEX = 'site/public/play/index.html';
+const PLAY_ROOT = 'site/public/play';
 const REPOSITORY = 'MaplebirchLeaf/DoL-Thalia';
 
 export async function syncSiteData(): Promise<void> {
@@ -132,36 +131,21 @@ function parseReleaseEdition(version: string): { edition: 'standard' | 'dolp'; g
 }
 
 async function ensureOnlinePlayHtml(config: ThaliaConfig): Promise<void> {
-  if (existsSync(PLAY_INDEX)) {
-    await splitHtmlAssets(PLAY_INDEX);
-    return;
-  }
-
   const sourceHtml = await runTimedStep(`Build ${config.game.version} vanilla source HTML`, () => resolveVanillaGameHtml(config));
-  const siteConfig: ThaliaConfig = {
-    ...config,
-    paths: {
-      ...config.paths,
-      source_html: sourceHtml,
-      output_html: PLAY_INDEX
-    }
-  };
-
-  await prepareLocalBuild(siteConfig, {
-    steps: ['sugarcube', 'modloader', 'story-format', 'modloader-tools', 'builtin-mods'],
-    storyFormat: {
-      i10nHook: false,
-      modloaderHook: true
-    }
-  });
-  await runTimedStep(`Build ${config.game.version} online play HTML`, () =>
-    buildHtml(siteConfig, {
-      embedIndexDBMods: false,
-      minify: false,
-      modloader: true
-    })
-  );
-  await splitHtmlAssets(PLAY_INDEX);
+  await rm(PLAY_ROOT, { recursive: true, force: true });
+  await prepareLocalBuild(config, { steps: ['sugarcube', 'modloader', 'modloader-tools', 'builtin-mods'] });
+  for (const [language, i10nHook] of [
+    ['en', false],
+    ['chs', true]
+  ] as const) {
+    const siteConfig: ThaliaConfig = {
+      ...config,
+      paths: { ...config.paths, source_html: sourceHtml, output_html: `${PLAY_ROOT}/${language}/index.html` }
+    };
+    await prepareLocalBuild(siteConfig, { steps: ['story-format'], storyFormat: { i10nHook, modloaderHook: true } });
+    await runTimedStep(`Build ${config.game.version} ${language} online play HTML`, () => buildHtml(siteConfig, { embedIndexDBMods: false, i10nHook, minify: false, modloader: true }));
+    await splitHtmlAssets(siteConfig.paths.output_html);
+  }
 }
 
 async function writeJson(path: string, data: unknown): Promise<void> {
