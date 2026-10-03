@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { readReleasePresets } from '../release/presets';
 import { parseReleaseAssetName, parseReleaseTag, type ParsedReleaseTag } from '../release/protocol';
+import { githubHeaders } from '../core/download';
 import { logWarn } from '../core/log';
 
 export interface SiteReleasePreset {
@@ -48,7 +49,7 @@ function renderInlineArray(values: unknown[]): string {
 const RELEASE_PRESETS_SITE_DATA = 'site/data/release.json';
 const RELEASE_VERSIONS_SITE_DATA = 'site/data/versions.json';
 
-export async function syncSiteData(): Promise<void> {
+export async function syncSiteData(requiredReleaseTag?: string): Promise<void> {
   const presets = await readReleasePresets();
   const sitePresets: SiteReleasePreset[] = presets.map(({ name, title_en, title_cn, title }) => ({
     name,
@@ -58,6 +59,12 @@ export async function syncSiteData(): Promise<void> {
   await writeJson(RELEASE_PRESETS_SITE_DATA, sitePresets);
 
   const publishedVersions = await fetchPublishedVersions();
+  if (requiredReleaseTag) {
+    const release = parseReleaseTag(requiredReleaseTag);
+    if (!publishedVersions?.some(version => version.tag === release.storedVersion && version.presets?.length)) {
+      throw new Error(`Cannot deploy site without published download metadata for ${release.tag}.`);
+    }
+  }
   if (publishedVersions !== null) {
     await writeJson(RELEASE_VERSIONS_SITE_DATA, publishedVersions);
   } else {
@@ -72,12 +79,13 @@ export async function syncSiteData(): Promise<void> {
 export async function fetchPublishedVersions(): Promise<SiteRelease[] | null> {
   try {
     const response = await fetch('https://api.github.com/repos/MaplebirchLeaf/DoL-Thalia/releases?per_page=100', {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'DoL-Thalia-site' }
+      headers: githubHeaders()
     });
     if (!response.ok) return null;
-    const releases = (await response.json()) as Array<{ tag_name?: string; assets?: Array<{ name?: string }> }>;
+    const releases = (await response.json()) as Array<{ tag_name?: string; draft?: boolean; prerelease?: boolean; assets?: Array<{ name?: string }> }>;
     const result: SiteRelease[] = [];
     for (const release of releases) {
+      if (release.draft || release.prerelease) continue;
       let parsed: ParsedReleaseTag;
       try {
         parsed = parseReleaseTag(release.tag_name ?? '');

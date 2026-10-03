@@ -124,6 +124,8 @@ jobs:
 
       - name: Build site
         run: bun run site:build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Verify online play contains only bundled mods
         run: |

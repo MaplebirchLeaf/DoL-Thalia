@@ -16,6 +16,10 @@
 
 GitHub Pages 只上传 `dist/site`。ZIP/APK 下载链接指向 Release。工作流先用 `site:play` 显式构建双语在线游戏，再执行 `site:build` 同步元数据并构建页面，最后审计两个在线入口。`site:data` 和 `site:build` 本身不下载或构建游戏。
 
+站点构建使用 `GITHUB_TOKEN` 认证读取公开 Release；发布工作流通过 `THALIA_RELEASE_TAG` 指定必须显示的版本。API 请求失败或该版本没有下载附件时停止部署，避免发布空下载列表。本地未指定该标签时仍允许保留已有元数据。
+
+只更新网页时，启动 `Pages` 工作流，填写已发布的 `tag` 和成功的 Release 工作流编号 `release_run_id`。它从该工作流的 Pages 附件中复用已经审计的双语在线游戏，只重建站点，不重新构建 ZIP/APK。原工作流附件已过期时，需要重新生成在线游戏。
+
 中文页面的在线游玩链接为 `play/chs/index.html`，英文页面为 `play/en/index.html`，分别使用中文与英文 SugarCube i10n。两个入口均仅包含原版游戏和 20 个 ModLoader 内置模组，不预装 `ModI18N`、美化或其他整合模组；中文入口只汉化 SugarCube UI，剧情没有预装汉化。
 
 本地手动构建时，设置具有资源仓库读取权限的 `GITHUB_TOKEN`，再运行 `bun run build:ready`。默认只构建两个汉化 Goose＋Mysterious＋NPC Portraits ZIP，不上传产物。

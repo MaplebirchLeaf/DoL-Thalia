@@ -1,0 +1,94 @@
+name: Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag, for example v0.5.12.13
+        required: true
+        type: string
+      release_run_id:
+        description: Successful Release run whose online games should be reused
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: thalia-release-and-pages
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      THALIA_RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check site code
+        run: |
+          bun run check
+          bun test ./tests/site-release-sync.test.ts
+
+      - name: Validate source Release run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_RUN_ID: ${{ inputs.release_run_id }}
+        run: |
+          [[ "$RELEASE_RUN_ID" =~ ^[0-9]+$ ]] || { echo "Expected a numeric Release run ID." >&2; exit 1; }
+          test "$(gh run view "$RELEASE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName --jq .workflowName)" = Release
+          test "$(gh run view "$RELEASE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion)" = success
+
+      - name: Download previously audited online games
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: .cache/pages-artifact
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.release_run_id }}
+
+      - name: Restore online games
+        run: |
+          mkdir -p .cache/published-site
+          tar -xf .cache/pages-artifact/artifact.tar -C .cache/published-site
+          test -f .cache/published-site/play/en/index.html
+          test -f .cache/published-site/play/chs/index.html
+          cp -R .cache/published-site/play site/public/play
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build site
+        run: bun run site:build
+
+      - name: Verify online play contains only bundled mods
+        run: |
+          python3 tools/audit_release.py --html dist/site/play/en/index.html --online-play
+          python3 tools/audit_release.py --html dist/site/play/chs/index.html --online-play
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
