@@ -15,25 +15,26 @@ release_repository = "Frostberg/degrees-of-lewdity-plus"
 
 [mod_sources.chinese-localization]
 repository = "Eltirosto/Degrees-of-Lewdity-Chinese-Localization"
+release_tag = "v0.5.12.13-chs-1.0.1a"
 dolp_repository = ""
 asset_keywords = ["ModI18N"]
 asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.2.1"
+release_tag = "maplebirch-release-v5.2.2"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v1.2.0"
+release_tag = "v1.3.1"
 asset_keywords = ["deadwood-reblooms", "deadwood-reblooms-audio"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.0.1"
+release_tag = "v1.1.0"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
@@ -57,7 +58,7 @@ asset_extensions = [".zip"]
 
 [upstreams.sugarcube_vrelnir]
 url = "https://gitgud.io/Vrelnir/sugarcube-2"
-ref = "new-year-new-rebase"
+ref = "378d9b950a4bf9ddbeb9fe21692acdd7659b6dc3"
 path = "vendor/sugarcube-2-vrelnir"
 
 [upstreams.modloader]

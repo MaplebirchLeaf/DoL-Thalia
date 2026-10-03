@@ -127,8 +127,8 @@ async function findChineseLocalizationReleaseTag(repository: string, gameVersion
   return release.tag_name;
 }
 
-export async function requirePublishedLocalization(repository: string, gameVersion: string): Promise<string> {
-  const releases = await fetchReleases(repository);
+export async function requirePublishedLocalization(repository: string, gameVersion: string, releaseTag?: string): Promise<string> {
+  const releases = releaseTag ? [await fetchRelease(repository, releaseTag)] : await fetchReleases(repository);
   const release = releases.find(item => !item.draft && !item.prerelease && item.tag_name?.startsWith(`v${gameVersion}-chs-`));
   if (!release?.tag_name) throw new Error(`Official localization ${gameVersion} has not been released. Internal local packages will not be used by build:ready.`);
   selectAsset(release, 'ModI18N', ['.mod.zip'], gameVersion);

@@ -16,6 +16,6 @@ if (needsLocalization) {
   if (versions.length !== 1) throw new Error('Build one localized game version at a time');
   const source = config.mod_sources?.['chinese-localization'];
   if (!source?.repository) throw new Error('Official localization source is not configured');
-  source.release_tag = await requirePublishedLocalization(source.repository, versions[0]);
+  source.release_tag = await requirePublishedLocalization(source.repository, versions[0], source.release_tag);
 }
 await buildRelease(config, { ...options, presets: names, versions, targets: options.targets?.length ? options.targets : ['zip'] });

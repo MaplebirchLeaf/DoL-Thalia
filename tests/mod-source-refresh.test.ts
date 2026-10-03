@@ -60,3 +60,25 @@ test('release-ready rejects absent or prerelease localization', async () => {
     globalThis.fetch = previousFetch;
   }
 });
+
+test('release-ready preserves a pinned official localization and rejects incompatible pins', async () => {
+  const previousFetch = globalThis.fetch;
+  let release = {
+    tag_name: 'v0.5.12.13-chs-1.0.1a',
+    draft: false,
+    prerelease: false,
+    assets: [{ name: 'ModI18N-0.5.12.13-chs-1.0.1a.mod.zip', browser_download_url: 'https://example.com/ModI18N.mod.zip' }]
+  };
+  globalThis.fetch = (async (url: string | URL | Request) => {
+    expect(String(url)).toBe('https://api.github.com/repos/example/localization/releases/tags/v0.5.12.13-chs-1.0.1a');
+    return Response.json(release);
+  }) as typeof fetch;
+  try {
+    expect(await requirePublishedLocalization('example/localization', '0.5.12.13', release.tag_name)).toBe(release.tag_name);
+    await expect(requirePublishedLocalization('example/localization', '0.5.12.12', release.tag_name)).rejects.toThrow('has not been released');
+    release = { ...release, prerelease: true };
+    await expect(requirePublishedLocalization('example/localization', '0.5.12.13', release.tag_name)).rejects.toThrow('has not been released');
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
