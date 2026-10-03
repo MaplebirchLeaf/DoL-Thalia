@@ -242,6 +242,8 @@ async function signApk(config: ThaliaConfig, unsignedApk: string, outputApk: str
     ],
     { quiet: true }
   );
+  await run([resolveAndroidBuildTool(config, 'apksigner'), 'verify', '--verbose', outputApk], { quiet: true });
+  await run([resolveAndroidBuildTool(config, 'zipalign'), '-c', '-p', '4', outputApk], { quiet: true });
   await rm(alignedApk, { force: true });
 }
 
