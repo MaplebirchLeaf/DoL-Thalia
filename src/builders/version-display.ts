@@ -2,6 +2,7 @@
 export function patchVersionDisplay(): void {
   const node = document.getElementById('gameVersionDisplay');
   if (!node || node.querySelector('[data-thalia-version]')) return;
+  if (node.firstChild?.nodeType === 3) node.firstChild.textContent = node.firstChild.textContent?.trimStart() ?? '';
   const marker = document.createElement('span');
   marker.dataset.thaliaVersion = '';
   marker.textContent = 'DoL-Thalia-';
