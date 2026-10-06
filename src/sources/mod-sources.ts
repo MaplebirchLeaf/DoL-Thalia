@@ -5,6 +5,7 @@ import { basename, join, resolve } from 'node:path';
 import type { ThaliaConfig } from '../core/config';
 import { downloadFile, githubHeaders } from '../core/download';
 import { logWarn } from '../core/log';
+import { run } from '../core/process';
 
 interface GitHubRelease {
   assets?: GitHubReleaseAsset[];
@@ -230,4 +231,35 @@ async function downloadAsset(asset: SelectedAsset, outputDir: string): Promise<v
 async function hasSameSize(path: string, expectedSize: number | undefined): Promise<boolean> {
   if (!existsSync(path) || typeof expectedSize !== 'number') return false;
   return (await stat(path)).size === expectedSize;
+}
+
+/** Refresh translations without changing the upstream archive or its source anchors. */
+export async function correctLocalization(config: ThaliaConfig, files: string[]): Promise<string[]> {
+  const data = config.localization_data;
+  if (!data || data.game_version !== config.game.version) return files;
+  const index = files.findIndex(file => basename(file).startsWith(`ModI18N-${config.game.version}-`));
+  if (index < 0) return files;
+  const directory = resolve('.cache/localization');
+  await mkdir(directory, { recursive: true });
+  const raw = join(directory, data.asset_name);
+  if (
+    !existsSync(raw) ||
+    createHash('sha256')
+      .update(await readFile(raw))
+      .digest('hex') !== data.sha256
+  ) {
+    const release = await fetchRelease(data.repository, data.release_tag);
+    const asset = release.assets?.find(item => item.name === data.asset_name);
+    if (!asset?.browser_download_url) throw new Error(`Missing localization data: ${data.asset_name}`);
+    await downloadAsset({ ...asset, name: data.asset_name, keyword: data.asset_name, browser_download_url: asset.browser_download_url }, directory);
+  }
+  if (
+    createHash('sha256')
+      .update(await readFile(raw))
+      .digest('hex') !== data.sha256
+  )
+    throw new Error('Localization data SHA256 mismatch');
+  const output = join(directory, basename(files[index]));
+  await run(['python3', 'tools/update_localization.py', '--base', files[index], '--raw', raw, '--output', output]);
+  return files.map((file, i) => (i === index ? output : file));
 }

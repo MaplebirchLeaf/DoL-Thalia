@@ -92,3 +92,11 @@ sdk = 35
 build_tools = "35.0.0"
 command_line_tools = "15859902"
 gradle = "8.13"
+
+# Private ParaTranz export; only existing source-anchored ModI18N rules are refreshed.
+[localization_data]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_name = "2026_10_06_12_14_58_5b8c66.zip"
+sha256 = "8269611d2a5bc3d6a5ca430202f81c8162ea41027f2e138340e5a7c7489ee607"
+game_version = "0.5.12.13"

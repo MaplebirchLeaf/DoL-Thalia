@@ -10,6 +10,7 @@ import type { ThaliaConfig } from '../core/config';
 import { readLocalBundledModPaths } from './modloader';
 import { run } from '../core/process';
 import { type ReleasePreset, readReleasePreset } from '../release/presets';
+import { correctLocalization } from '../sources/mod-sources';
 import { resolveVanillaGameInput } from '../sources/vanilla-game';
 import { resolveDoLPGameZip } from '../sources/dolp-game';
 import { splitHtmlAssets } from './split-html-assets';
@@ -86,7 +87,7 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const indexedDbModFiles = preset ? await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods, config.mod_sources) : [];
+      const indexedDbModFiles = preset ? await correctLocalization(config, await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods, config.mod_sources)) : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
       await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });

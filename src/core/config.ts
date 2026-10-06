@@ -47,6 +47,14 @@ export interface ThaliaConfig {
 
   mod_sources?: Record<string, ModSourceConfig>;
 
+  localization_data?: {
+    repository: string;
+    release_tag: string;
+    asset_name: string;
+    sha256: string;
+    game_version: string;
+  };
+
   upstreams: {
     sugarcube_vrelnir: UpstreamConfig;
     modloader: UpstreamConfig;
@@ -115,6 +123,14 @@ function validateConfig(config: ThaliaConfig): void {
   validateRequiredString(config.apk?.toolchain?.gradle, 'apk.toolchain.gradle');
   validatePositiveInteger(config.apk?.toolchain?.java, 'apk.toolchain.java');
   validatePositiveInteger(config.apk?.toolchain?.sdk, 'apk.toolchain.sdk');
+
+  if (config.localization_data) {
+    for (const key of ['repository', 'release_tag', 'asset_name', 'sha256', 'game_version'] as const) {
+      validateRequiredString(config.localization_data[key], `localization_data.${key}`);
+    }
+    if (!/^[a-f0-9]{64}$/.test(config.localization_data.sha256)) throw new Error('Invalid localization_data.sha256');
+    if (!/^[^/\\]+\.zip$/.test(config.localization_data.asset_name)) throw new Error('Invalid localization_data.asset_name');
+  }
 
   for (const [gameName, variant] of Object.entries(config.games || {})) {
     if (!variant || typeof variant !== 'object') throw new Error(`Invalid config field: games.${gameName}`);
