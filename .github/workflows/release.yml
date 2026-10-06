@@ -107,7 +107,8 @@ jobs:
           mapfile -t assets < <(find dist/zip dist/apk -maxdepth 1 -type f \( -name '*.zip' -o -name '*.apk' \) -print | sort)
           test ${#assets[@]} -gt 0 || { echo "No release assets found in dist/zip or dist/apk." >&2; exit 1; }
 
-          git fetch --tags
+          # Checkout may peel annotated tags into a local commit ref.
+          git fetch --tags --force
           if git rev-parse -q --verify "refs/tags/$THALIA_RELEASE_TAG" >/dev/null; then
             test "$(git rev-parse "refs/tags/$THALIA_RELEASE_TAG^{commit}")" = "$(git rev-parse HEAD)" || { echo "Release tag changed after validation." >&2; exit 1; }
           else
