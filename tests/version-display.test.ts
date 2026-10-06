@@ -4,12 +4,12 @@ import { versionDisplayScript } from '../src/builders/version-display';
 
 test('version prefix survives repeated passage events and keeps the ModLoader suffix', () => {
   const suffix = { textContent: '-(ML-v2.102.0)' };
-  let children = [{ textContent: '\n\t0.5.12.13' }, suffix];
+  let children = [{ textContent: '\n\t' }, { textContent: '\n\t' }, { textContent: '\n\t0.5.12.13' }, suffix];
   let patched = false;
   let refresh: () => void = () => {};
   const node = {
-    get firstChild() {
-      return Object.assign(children[0], { nodeType: 3 });
+    get childNodes() {
+      return children.map(child => Object.assign(child, { nodeType: child === suffix ? 1 : 3 }));
     },
     querySelector: () => (patched ? children[0] : null),
     prepend: (marker: { textContent: string }) => {
