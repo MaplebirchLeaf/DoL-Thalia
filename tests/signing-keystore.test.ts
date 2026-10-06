@@ -22,27 +22,7 @@ async function runKeytool(args: string[]) {
 beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), 'thalia-signing-test-'));
   fixture = join(root, 'fixture.p12');
-  await runKeytool([
-    '-genkeypair',
-    '-storetype',
-    'PKCS12',
-    '-keystore',
-    fixture,
-    '-storepass',
-    'android',
-    '-keypass',
-    'android',
-    '-alias',
-    'dol-thalia',
-    '-keyalg',
-    'RSA',
-    '-keysize',
-    '2048',
-    '-validity',
-    '2',
-    '-dname',
-    'CN=Thalia signing test'
-  ]);
+  await copyFile(new URL('./fixtures/signing-test.p12', import.meta.url), fixture);
   bytes = await readFile(fixture);
   const certificate = await runKeytool(['-exportcert', '-keystore', fixture, '-storepass', 'android', '-alias', 'dol-thalia']);
   certificateSha256 = createHash('sha256').update(certificate).digest('hex');
@@ -119,27 +99,7 @@ test('a certificate-only keystore cannot replace the private signing key', async
 
 test('rejects a JKS whose store is readable but private-key password differs from android', async () => {
   const privatePasswordFixture = join(root, 'different-key-password.jks');
-  await runKeytool([
-    '-genkeypair',
-    '-storetype',
-    'JKS',
-    '-keystore',
-    privatePasswordFixture,
-    '-storepass',
-    'android',
-    '-keypass',
-    'private-password',
-    '-alias',
-    'dol-thalia',
-    '-keyalg',
-    'RSA',
-    '-keysize',
-    '2048',
-    '-validity',
-    '2',
-    '-dname',
-    'CN=Thalia different private-key password test'
-  ]);
+  await copyFile(new URL('./fixtures/signing-test-private-password.jks', import.meta.url), privatePasswordFixture);
   expect((await runKeytool(['-list', '-keystore', privatePasswordFixture, '-storepass', 'android', '-alias', 'dol-thalia'])).length).toBeGreaterThan(0);
   const target = join(root, 'different-key-password', 'DoL-Thalia.keystore');
   await expect(restoreSigningKeystore((await readFile(privatePasswordFixture)).toString('base64'), target)).rejects.toThrow();
