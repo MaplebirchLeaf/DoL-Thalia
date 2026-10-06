@@ -14,6 +14,7 @@ import { resolveVanillaGameInput } from '../sources/vanilla-game';
 import { resolveDoLPGameZip } from '../sources/dolp-game';
 import { splitHtmlAssets } from './split-html-assets';
 import { withStoryFormatConfig } from './story-format-config';
+import { versionDisplayScript } from './version-display';
 
 const HTML_CACHE_DIR = '.cache/html';
 
@@ -92,6 +93,10 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
       generatedHtml = `${replacedHtml}.mod.html`;
       requireFile(generatedHtml);
       if (embedIndexDBMods) await embedIndexedDbMods(generatedHtml, indexedDbModFiles);
+    }
+    const generated = await readFile(generatedHtml, 'utf8');
+    if (!generated.includes('<script id="thalia-version-display">')) {
+      await writeFile(generatedHtml, generated.replace('</head>', `${versionDisplayScript()}</head>`), 'utf8');
     }
     await injectModDependencyProxy(generatedHtml);
     if (minifyHtml) await minifySugarCubeScript(generatedHtml);
