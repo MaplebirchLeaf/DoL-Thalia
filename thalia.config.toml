@@ -28,7 +28,7 @@ asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v1.4.0"
+release_tag = "v1.4.1"
 asset_keywords = ["deadwood-reblooms", "deadwood-reblooms-audio"]
 asset_extensions = [".modpack"]
 
