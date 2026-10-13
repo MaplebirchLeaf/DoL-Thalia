@@ -9,7 +9,7 @@ if (options.skipModSources) throw new Error('build:ready requires source synchro
 const config = withGameVariant(await loadConfig(), options.game);
 const versions = options.versions?.length ? options.versions : [config.game.version];
 const presets = await readReleasePresets(config.paths.mod_list);
-const names = options.presets?.length ? options.presets : options.game === 'dolp' ? ['goose-f-mysterious', 'goose-m-mysterious'] : ['chs-goose-f-mysterious', 'chs-goose-m-mysterious'];
+const names = options.presets?.length ? options.presets : options.game === 'dolp' ? ['goose-f-mysterious'] : ['chs-goose-f-mysterious'];
 const needsLocalization = selectReleasePresets(presets, names).some(preset => preset.mods.includes('ModI18N'));
 if (needsLocalization) {
   if (versions.length !== 1) throw new Error('Build one localized game version at a time');

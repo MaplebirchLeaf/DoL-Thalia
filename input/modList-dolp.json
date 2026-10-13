@@ -2,28 +2,18 @@
   "base_mods": [
     "maplebirch",
     "deadwood-reblooms",
-    "deadwood-reblooms-audio",
     "revelation-the-book-of-return"
   ],
   "presets": [
     {
       "name": "goose-f-mysterious",
-      "title_en": "Fem Goose + Mysterious + NPC Portraits",
-      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits",
+      "title_en": "Fem Goose + Mysterious + NPC Portraits + Xrayfork",
+      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits＋Xrayfork",
       "mods": [
         "Fem Goose Compilation",
         "Mysterious",
-        "NPC Sidebar Portraits"
-      ]
-    },
-    {
-      "name": "goose-m-mysterious",
-      "title_en": "Masc Goose + Mysterious + NPC Portraits",
-      "title_cn": "男性 Goose＋Mysterious＋NPC Portraits",
-      "mods": [
-        "Masc Goose Compilation",
-        "Mysterious",
-        "NPC Sidebar Portraits"
+        "NPC Sidebar Portraits",
+        "Xrayfork"
       ]
     }
   ]

@@ -2,6 +2,7 @@
 name = "DoL-Thalia"
 
 [game]
+combat_backport = true
 default_mod_list = "goose-f-mysterious"
 version = "0.5.12.13"
 
@@ -22,19 +23,19 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.4.2"
+release_tag = "maplebirch-release-v5.4.3"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v1.4.4"
-asset_keywords = ["deadwood-reblooms", "deadwood-reblooms-audio"]
+release_tag = "v2.0.1"
+asset_keywords = ["deadwood-reblooms"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.1.1"
+release_tag = "v1.2.0"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
@@ -44,16 +45,16 @@ release_tag = "assets"
 asset_keywords = ["Fem.Goose.Compilation"]
 asset_extensions = [".zip"]
 
-[mod_sources."Masc Goose Compilation"]
-repository = "MaplebirchLeaf/DoL-Thalia-Assets"
-release_tag = "assets"
-asset_keywords = ["Masc.Goose.Compilation"]
-asset_extensions = [".zip"]
-
 [mod_sources."Mysterious"]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
 asset_keywords = ["Mysterious"]
+asset_extensions = [".zip"]
+
+[mod_sources."Xrayfork"]
+repository = "MaplebirchLeaf/DoL-Thalia-Assets"
+release_tag = "assets"
+asset_keywords = ["Xrayfork"]
 asset_extensions = [".zip"]
 
 [mod_sources."NPC Sidebar Portraits"]
@@ -97,6 +98,6 @@ gradle = "8.13"
 [localization_data]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
-asset_name = "2026_10_06_12_14_58_5b8c66.zip"
-sha256 = "8269611d2a5bc3d6a5ca430202f81c8162ea41027f2e138340e5a7c7489ee607"
+asset_name = "2026_10_13_23_00_09_3b4c92.zip"
+sha256 = "bbf28c9e9dfc0f02e2359b4df300f5b154765ed3440282ff5bcbf418a22aa7e5"
 game_version = "0.5.12.13"

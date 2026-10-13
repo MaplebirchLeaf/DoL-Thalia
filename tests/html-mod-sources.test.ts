@@ -10,6 +10,7 @@ import { loadConfig } from '../src/core/config';
 test('HTML source selection uses configured asset filenames first and legacy names only as fallback', async () => {
   const root = await mkdtemp(join(tmpdir(), 'thalia-html-mod-sources-'));
   const config = await loadConfig();
+  config.game.combat_backport = false;
   config.paths.story_format = join(root, 'format.js');
   config.paths.source_html = join(root, 'source.html');
   config.paths.output_html = join(root, 'output/index.html');
@@ -19,9 +20,7 @@ test('HTML source selection uses configured asset filenames first and legacy nam
   const versionDir = join(config.paths.builtin_mods, config.game.version);
   const files: Record<string, string> = {
     'Fem.Goose.Compilation.zip': 'Fem Goose Compilation',
-    'Masc.Goose.Compilation.zip': 'Masc Goose Compilation',
     'Fem Goose Compilation.zip': 'Fem Goose Compilation',
-    'Masc Goose Compilation.zip': 'Masc Goose Compilation',
     'Mysterious.zip': 'Mysterious',
     'Unrelated.Beautification.zip': 'Unrelated',
     [`Fem.Goose.Compilation-preview-${config.game.version}.zip`]: 'Unrelated preview',
@@ -40,7 +39,7 @@ test('HTML source selection uses configured asset filenames first and legacy nam
     await writeFile(join(tools, 'sc2ReplaceTool.js'), `const fs = require('node:fs'); const html = process.argv[2]; fs.copyFileSync(html, html + '.sc2replace.html');`);
     await writeFile(join(tools, 'insert2html.js'), `const fs = require('node:fs'); const html = process.argv[2]; fs.copyFileSync(html, html + '.mod.html');`);
     for (const [filename, name] of Object.entries(files)) {
-      if (filename === 'Fem Goose Compilation.zip' || filename === 'Masc Goose Compilation.zip') continue;
+      if (filename === 'Fem Goose Compilation.zip') continue;
       await writeFile(join(versionDir, filename), zipSync({ 'boot.json': strToU8(JSON.stringify({ name })), 'marker.txt': strToU8(filename) }));
     }
 
@@ -55,26 +54,19 @@ test('HTML source selection uses configured asset filenames first and legacy nam
       { name: 'Fem Goose Compilation', file: 'Fem.Goose.Compilation.zip' },
       { name: 'Mysterious', file: 'Mysterious.zip' }
     ]);
-    expect(await embedded(['Masc Goose Compilation', 'Mysterious'])).toEqual([
-      { name: 'Masc Goose Compilation', file: 'Masc.Goose.Compilation.zip' },
-      { name: 'Mysterious', file: 'Mysterious.zip' }
-    ]);
-    for (const filename of ['Fem Goose Compilation.zip', 'Masc Goose Compilation.zip']) {
+    for (const filename of ['Fem Goose Compilation.zip']) {
       await writeFile(join(versionDir, filename), zipSync({ 'boot.json': strToU8(JSON.stringify({ name: files[filename] })), 'marker.txt': strToU8(filename) }));
     }
-    expect(await embedded(['Fem Goose Compilation', 'Masc Goose Compilation', 'Mysterious'])).toEqual([
+    expect(await embedded(['Fem Goose Compilation', 'Mysterious'])).toEqual([
       { name: 'Fem Goose Compilation', file: 'Fem.Goose.Compilation.zip' },
-      { name: 'Masc Goose Compilation', file: 'Masc.Goose.Compilation.zip' },
       { name: 'Mysterious', file: 'Mysterious.zip' }
     ]);
     expect(await embedded(['deadwood-reblooms'])).toEqual([{ name: 'deadwood-reblooms', file: `deadwood-reblooms-${config.game.version}-v1.3.1.mod.zip` }]);
     expect(await embedded(['deadwood-reblooms-audio'])).toEqual([{ name: 'deadwood-reblooms-audio', file: `deadwood-reblooms-audio-${config.game.version}-v1.3.1.mod.zip` }]);
     expect(await embedded(['deadwood-reblooms', 'deadwood-reblooms-audio'])).toHaveLength(2);
     await rm(join(versionDir, 'Fem.Goose.Compilation.zip'));
-    await rm(join(versionDir, 'Masc.Goose.Compilation.zip'));
-    expect(await embedded(['Fem Goose Compilation', 'Masc Goose Compilation', 'Mysterious'])).toEqual([
+    expect(await embedded(['Fem Goose Compilation', 'Mysterious'])).toEqual([
       { name: 'Fem Goose Compilation', file: 'Fem Goose Compilation.zip' },
-      { name: 'Masc Goose Compilation', file: 'Masc Goose Compilation.zip' },
       { name: 'Mysterious', file: 'Mysterious.zip' }
     ]);
   } finally {

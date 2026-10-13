@@ -4,7 +4,18 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ThaliaConfig } from '../src/core/config';
-import { requirePublishedLocalization, syncModSources } from '../src/sources/mod-sources';
+import { correctLocalization, requirePublishedLocalization, syncModSources } from '../src/sources/mod-sources';
+
+test('combat builds refuse an unpaired or unversioned localization archive', async () => {
+  const config = { game: { version: '0.5.12.13' } } as ThaliaConfig;
+  const combat = { original: 'original.html', patched: 'patched.html' };
+  const files = ['ModI18N-0.5.12.13-chs-1.0.1a.mod.zip'];
+  expect(await correctLocalization(config, files)).toEqual(files);
+  expect(await correctLocalization(config, ['Xrayfork.zip'], combat)).toEqual(['Xrayfork.zip']);
+  await expect(correctLocalization(config, files, combat)).rejects.toThrow('requires matching localization data');
+  config.localization_data = { game_version: '0.5.12.13' } as NonNullable<ThaliaConfig['localization_data']>;
+  await expect(correctLocalization(config, ['ModI18N-custom.zip'], combat)).rejects.toThrow('requires a versioned ModI18N archive');
+});
 
 test('private release assets refresh when same-name same-size content changes', async () => {
   const root = await mkdtemp(join(tmpdir(), 'thalia-source-'));

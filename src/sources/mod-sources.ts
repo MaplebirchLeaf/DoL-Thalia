@@ -233,11 +233,14 @@ async function hasSameSize(path: string, expectedSize: number | undefined): Prom
   return (await stat(path)).size === expectedSize;
 }
 
-/** Refresh translations without changing the upstream archive or its source anchors. */
-export async function correctLocalization(config: ThaliaConfig, files: string[]): Promise<string[]> {
+/** Refresh a derived localization archive and bind combat translations when paired source is supplied. */
+export async function correctLocalization(config: ThaliaConfig, files: string[], combat?: { original: string; patched: string }): Promise<string[]> {
   const data = config.localization_data;
+  if (combat && files.some(file => basename(file).startsWith('ModI18N')) && (!data || data.game_version !== config.game.version))
+    throw new Error('Combat backport requires matching localization data for ModI18N');
   if (!data || data.game_version !== config.game.version) return files;
   const index = files.findIndex(file => basename(file).startsWith(`ModI18N-${config.game.version}-`));
+  if (combat && index < 0 && files.some(file => basename(file).startsWith('ModI18N'))) throw new Error('Combat backport requires a versioned ModI18N archive');
   if (index < 0) return files;
   const directory = resolve('.cache/localization');
   await mkdir(directory, { recursive: true });
@@ -260,6 +263,16 @@ export async function correctLocalization(config: ThaliaConfig, files: string[])
   )
     throw new Error('Localization data SHA256 mismatch');
   const output = join(directory, basename(files[index]));
-  await run(['python3', 'tools/update_localization.py', '--base', files[index], '--raw', raw, '--output', output]);
+  await run([
+    'python3',
+    'tools/update_localization.py',
+    '--base',
+    files[index],
+    '--raw',
+    raw,
+    '--output',
+    output,
+    ...(combat ? ['--combat-original', combat.original, '--combat-html', combat.patched] : [])
+  ]);
   return files.map((file, i) => (i === index ? output : file));
 }

@@ -10,6 +10,7 @@ import { loadConfig } from '../src/core/config';
 test('HTML builds select isolated English/Chinese formats and no-input builds keep the English format', async () => {
   const root = await mkdtemp(join(tmpdir(), 'thalia-story-selection-'));
   const config = await loadConfig();
+  config.game.combat_backport = false;
   config.paths.story_format = join(root, 'format.js');
   config.paths.source_html = join(root, 'source.html');
   config.paths.output_html = join(root, 'output/index.html');

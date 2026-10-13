@@ -16,6 +16,7 @@ import { resolveDoLPGameZip } from '../sources/dolp-game';
 import { splitHtmlAssets } from './split-html-assets';
 import { withStoryFormatConfig } from './story-format-config';
 import { versionDisplayScript } from './version-display';
+import { applyCombatBackport } from '../../patches/dol-0.5.12.13-combat/index';
 
 const HTML_CACHE_DIR = '.cache/html';
 
@@ -81,13 +82,24 @@ export async function buildHtml(config: ThaliaConfig, options: BuildHtmlOptions 
     const gameInput = await prepareGameInput(config, cacheDir);
     const cacheHtml = join(cacheDir, 'index.html');
     await copyFile(gameInput.sourceHtml, cacheHtml);
+    const combatBackport = config.game.combat_backport === true && config.game.version === '0.5.12.13' && !config.game.release_repository;
+    if (combatBackport) {
+      const patched = applyCombatBackport(await readFile(cacheHtml, 'utf8'));
+      await writeFile(cacheHtml, patched.html, 'utf8');
+    }
     await run(['node', sc2ReplaceTool, cacheHtml, storyFormat], { quiet: true });
     const replacedHtml = `${cacheHtml}.sc2replace.html`;
     requireFile(replacedHtml);
     let generatedHtml = replacedHtml;
     if (includeModLoader) {
       const localModTargets = await readLocalBundledModPaths(modLoaderRoot);
-      const indexedDbModFiles = preset ? await correctLocalization(config, await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods, config.mod_sources)) : [];
+      const indexedDbModFiles = preset
+        ? await correctLocalization(
+            config,
+            await listIndexedDbModFiles(inputModsDir, config.game.version, preset.mods, config.mod_sources),
+            combatBackport ? { original: gameInput.sourceHtml, patched: cacheHtml } : undefined
+          )
+        : [];
       // Use a local mod list file so the generated HTML does not inherit remote entries from ModLoader.
       await writeFile(cleanLocalModListPath, `${JSON.stringify(localModTargets, null, 2)}\n`, 'utf8');
       await run(['node', insert2html, replacedHtml, localModListFile, beforeSc2], { cwd: modLoaderRoot, quiet: true });

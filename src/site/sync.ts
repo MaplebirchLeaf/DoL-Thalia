@@ -106,7 +106,7 @@ function collectPresets(release: ParsedReleaseTag, assets: Array<{ name?: string
   const presets = new Set<string>();
   for (const asset of assets) {
     const parsed = parseReleaseAssetName(asset.name ?? '', release);
-    if (parsed) presets.add(parsed.preset);
+    if (parsed && !/(?:^|-)goose-m(?:-|$)/.test(parsed.preset)) presets.add(parsed.preset);
   }
   return Array.from(presets);
 }

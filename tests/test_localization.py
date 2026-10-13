@@ -1,5 +1,6 @@
 import importlib.util
 import json
+from html import escape
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,65 @@ spec.loader.exec_module(module)
 
 
 class LocalizationTests(unittest.TestCase):
+    def test_combat_translation_follows_moved_text_and_preserves_fixed_code(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            def story(passages):
+                return ''.join(f'<tw-passagedata name="{escape(name)}">{escape(source)}</tw-passagedata>'
+                               for name, source in passages.items())
+            original.write_text(story({'Old': 'Hello $name\n<<if $old>>Old conditional<</if>>', 'Kept': 'Unchanged'}))
+            patched.write_text(story({'Old': '<<npcEjaculation 0>>', 'New': 'Hello $name\n<<if $new>>Old conditional<</if>>', 'Kept': 'Unchanged'}))
+            kept = dict(f='Unchanged', t='原样', pN='Kept', pos=0)
+            document = {'typeB': {'TypeBInputStoryScript': [
+                dict(f='Hello $name', t='你好 $name', pN='Old', pos=0, fileName='old.twee'),
+                dict(f='<<if $old>>Old conditional<</if>>', t='<<if $old>>旧条件<</if>>', pN='Old', pos=12),
+                kept]}}
+            report = module.adapt_combat(document, original, patched)
+            rows = document['typeB']['TypeBInputStoryScript']
+            moved = next(row for row in rows if row['pN'] == 'New')
+            self.assertEqual(report['combat_removed'], 1)
+            self.assertEqual(moved['pos'], 0)
+            self.assertEqual(moved['t'], '你好 $name')
+            self.assertIn(kept, rows)
+
+    def test_combat_translation_rejects_conflicting_migrations_and_unchanged_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            original.write_text('<tw-passagedata name="Old">Hello</tw-passagedata>')
+            patched.write_text('<tw-passagedata name="New">Hello</tw-passagedata>')
+            document = {'typeB': {'TypeBInputStoryScript': [dict(f='Hello', t=t, pN='Old', pos=0) for t in ['甲', '乙']]}}
+            with self.assertRaisesRegex(ValueError, 'Conflicting combat translation'):
+                module.adapt_combat(document, original, patched)
+            with self.assertRaisesRegex(ValueError, 'requires changed source'):
+                module.adapt_combat(document, original, original)
+
+    def test_combat_translation_does_not_emit_overlapping_native_matcher_ranges(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            original.write_text('<tw-passagedata name="Old">Whole &lt;span&gt;Hi&lt;/span&gt;\n</tw-passagedata>')
+            patched.write_text('<tw-passagedata name="Old">Whole &lt;span&gt;Hi&lt;/span&gt;\nFixed</tw-passagedata>')
+            document = {'typeB': {'TypeBInputStoryScript': [
+                dict(f='Whole <span>Hi</span>', t='完整 <span>你好</span>', pN='Old', pos=0),
+                dict(f='<span>Hi</span>', t='<span>你好</span>', pN='Old', pos=6)]}}
+            report = module.adapt_combat(document, original, patched)
+            rows = document['typeB']['TypeBInputStoryScript']
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(report['combat_overlap_removed'], 1)
+            self.assertEqual(rows[0]['f'], 'Whole <span>Hi</span>')
+
+    def test_combat_translation_uses_javascript_utf16_positions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            original.write_text('<tw-passagedata name="Old">😀\nHello</tw-passagedata>')
+            patched.write_text('<tw-passagedata name="New">😀😀\nHello</tw-passagedata>')
+            document = {'typeB': {'TypeBInputStoryScript': [dict(f='Hello', t='你好', pN='Old', pos=3)]}}
+            module.adapt_combat(document, original, patched)
+            self.assertEqual(document['typeB']['TypeBInputStoryScript'][0]['pos'], 5)
+
     def test_refresh_preserves_anchors_and_non_dictionary_entries(self):
         with tempfile.TemporaryDirectory() as directory:
             base, raw, output = [Path(directory) / name for name in ('base.zip', 'raw.zip', 'output.zip')]

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { fetchPublishedVersions } from '../src/site/sync';
+import { readReleasePresets } from '../src/release/presets';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -13,10 +14,14 @@ test('site metadata collects only archives for the exact release, with historica
         'DoL-Thalia-0.5.12.13-thalia-1003.zip',
         'DoL-Thalia-0.5.12.13-thalia-1003.apk',
         'DoL-Thalia-0.5.12.13-chs-1003.apk',
+        'DoL-Thalia-0.5.12.13-goose-f-mysterious-1003.zip',
+        'DoL-Thalia-0.5.12.13-chs-goose-f-mysterious-1003.apk',
         'DoL-Thalia-0.5.12.13-preview-1003.png',
         'DoL-Thalia-0.5.12.13-preview-1003.html',
         'DoL-Thalia-0.5.12.13-goose-f-mysterious-1002.zip',
         'DoL-Thalia-0.5.12.13-goose-m-mysterious.zip',
+        'DoL-Thalia-0.5.12.13-goose-m-mysterious-1003.zip',
+        'DoL-Thalia-0.5.12.13-chs-goose-m-mysterious-1003.apk',
         'DoL-Thalia-0.5.12.12-mysterious-1003.apk',
         'DoL-Thalia-dolp-0.5.12.13-marked-1003.zip',
         'DoL-Thalia-0.5.12.13-checksum-1003.zip.sha256'
@@ -42,7 +47,7 @@ test('site metadata collects only archives for the exact release, with historica
   try {
     const versions = await fetchPublishedVersions();
     expect(versions).toHaveLength(4);
-    expect(versions?.find(version => version.tag === '0.5.12.13-1003')?.presets).toEqual(['thalia', 'chs']);
+    expect(versions?.find(version => version.tag === '0.5.12.13-1003')?.presets).toEqual(['thalia', 'chs', 'goose-f-mysterious', 'chs-goose-f-mysterious']);
     expect(versions?.find(version => version.tag === '0.5.12.13')?.presets).toEqual(['thalia']);
     expect(versions?.find(version => version.tag === 'dolp-0.778-0914')?.presets).toEqual(['thalia', 'goose-f-mysterious']);
     expect(versions?.find(version => version.tag === 'dolp-0.777')?.presets).toEqual(['thalia']);
@@ -134,4 +139,11 @@ test('site metadata preserves the existing fallback on GitHub errors', async () 
   } finally {
     globalThis.fetch = previousFetch;
   }
+});
+
+test('committed site presets match the supported female visual packs', async () => {
+  const presets = await readReleasePresets();
+  const sitePresets = await Bun.file('site/data/release.json').json();
+  expect(sitePresets).toEqual(presets.map(({ name, title_en, title_cn }) => ({ name, title_en, title_cn })));
+  expect(sitePresets.some((preset: { name: string }) => preset.name.includes('goose-m-'))).toBe(false);
 });

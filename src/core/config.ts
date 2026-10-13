@@ -36,6 +36,7 @@ export interface ThaliaConfig {
   };
 
   game: {
+    combat_backport?: boolean;
     default_mod_list: string;
     release_repository?: string;
     release_date?: string;
@@ -95,6 +96,7 @@ export async function loadConfig(configPath = 'thalia.config.toml'): Promise<Tha
 }
 
 function validateConfig(config: ThaliaConfig): void {
+  if (config.game?.combat_backport !== undefined && typeof config.game.combat_backport !== 'boolean') throw new Error('Invalid game.combat_backport');
   validateRequiredString(config.project?.name, 'project.name');
 
   validateRequiredString(config.game?.default_mod_list, 'game.default_mod_list');

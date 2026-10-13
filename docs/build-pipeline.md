@@ -85,4 +85,10 @@ TypeScript 的 `src/core/`、`src/sources/` 和 `src/builders/` 负责配置、�
 
 ## 当前发布组合
 
-标准版使用 `input/modList.json`，提供女性 Goose＋Mysterious＋NPC Portraits、男性 Goose＋Mysterious＋NPC Portraits两种组合的英文与汉化版本，共 4 套配置。DoLP 使用 `input/modList-dolp.json`，提供这两种组合的英文版本，不包含 ModI18N。女性 Goose、男性 Goose、Mysterious 和 NPC Sidebar Portraits 均从私有资源 Release 读取，NPC 立绘图包加载在美化包之后。
+标准版使用 `input/modList.json`，提供女性 Goose＋Mysterious＋NPC Portraits＋Xrayfork 的英文与汉化版本，共 2 套配置。DoLP 使用 `input/modList-dolp.json`，提供同一组合的英文配置，不包含 ModI18N。图包均从私有资源 Release 读取，按 Goose、Mysterious、NPC Portraits、Xrayfork 的顺序加载，不再提供男性 Goose。
+
+## 临时战斗补丁
+
+原版 0.5.12.13 的临时补丁独立存放在 `patches/dol-0.5.12.13-combat/`，回植 [MR4962](https://gitgud.io/Vrelnir/degrees-of-lewdity/-/merge_requests/4962/diffs) 中相关战斗修复，不整包引入开发分支的新台词。`[game].combat_backport = true` 时应用，仅支持标准版 0.5.12.13，不作用于 DoLP 或较新版本。源码锚点不匹配时构建停止。
+
+包含 ModI18N 的配置同步适配战斗汉化：`tools/update_localization.py` 只迁移仍精确匹配的词条，重定位抽离后的段落，移除跨越已修改逻辑的旧规则。原始游戏 ZIP 和汉化 ZIP 不变，适配结果写入构建缓存。

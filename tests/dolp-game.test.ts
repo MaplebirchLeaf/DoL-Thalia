@@ -24,18 +24,23 @@ test('DoLP presets exclude localization and AU while standard provides both lang
   const config = await loadConfig();
   const dolp = withGameVariant(config, 'dolp');
   const presets = await readReleasePresets(dolp.paths.mod_list);
-  expect(presets.map(preset => preset.name)).toEqual(['goose-f-mysterious', 'goose-m-mysterious']);
+  expect(presets.map(preset => preset.name)).toEqual(['goose-f-mysterious']);
   expect(presets.some(preset => preset.name === dolp.game.default_mod_list)).toBe(true);
   for (const preset of presets) {
     expect(preset.mods).not.toContain('ModI18N');
     expect(preset.mods.some(mod => mod.startsWith('AU'))).toBe(false);
   }
   const standard = await readReleasePresets();
-  expect(standard.map(preset => preset.name)).toEqual(['goose-f-mysterious', 'goose-m-mysterious', 'chs-goose-f-mysterious', 'chs-goose-m-mysterious']);
+  expect(standard.map(preset => preset.name)).toEqual(['goose-f-mysterious', 'chs-goose-f-mysterious']);
   expect(standard.some(preset => preset.name === config.game.default_mod_list)).toBe(true);
   for (const preset of [...presets, ...standard]) {
-    expect(preset.mods.slice(-2)).toEqual(['Mysterious', 'NPC Sidebar Portraits']);
-    expect(preset.mods.filter(mod => mod.endsWith('Goose Compilation'))).toHaveLength(1);
+    expect(preset.mods).not.toContain('deadwood-reblooms-audio');
+    expect(preset.mods.slice(-4)).toEqual(['Fem Goose Compilation', 'Mysterious', 'NPC Sidebar Portraits', 'Xrayfork']);
+    expect(preset.mods.filter(mod => mod.endsWith('Goose Compilation'))).toEqual(['Fem Goose Compilation']);
   }
+  expect(config.mod_sources?.['Masc Goose Compilation']).toBeUndefined();
+  expect(config.mod_sources?.['deadwood-reblooms']?.asset_keywords).toEqual(['deadwood-reblooms']);
+  expect(config.mod_sources?.Xrayfork?.repository).toBe('MaplebirchLeaf/DoL-Thalia-Assets');
+  expect(config.mod_sources?.Xrayfork?.asset_keywords).toEqual(['Xrayfork']);
   expect(dolp.game.release_repository).toBe('Frostberg/degrees-of-lewdity-plus');
 });

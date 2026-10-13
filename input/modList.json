@@ -2,50 +2,30 @@
   "base_mods": [
     "maplebirch",
     "deadwood-reblooms",
-    "deadwood-reblooms-audio",
     "revelation-the-book-of-return"
   ],
   "presets": [
     {
       "name": "goose-f-mysterious",
-      "title_en": "Fem Goose + Mysterious + NPC Portraits",
-      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits",
+      "title_en": "Fem Goose + Mysterious + NPC Portraits + Xrayfork",
+      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits＋Xrayfork",
       "mods": [
         "Fem Goose Compilation",
         "Mysterious",
-        "NPC Sidebar Portraits"
-      ]
-    },
-    {
-      "name": "goose-m-mysterious",
-      "title_en": "Masc Goose + Mysterious + NPC Portraits",
-      "title_cn": "男性 Goose＋Mysterious＋NPC Portraits",
-      "mods": [
-        "Masc Goose Compilation",
-        "Mysterious",
-        "NPC Sidebar Portraits"
+        "NPC Sidebar Portraits",
+        "Xrayfork"
       ]
     },
     {
       "name": "chs-goose-f-mysterious",
-      "title_en": "Fem Goose + Mysterious + NPC Portraits (CHS)",
-      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits（汉化）",
+      "title_en": "Fem Goose + Mysterious + NPC Portraits + Xrayfork (CHS)",
+      "title_cn": "女性 Goose＋Mysterious＋NPC Portraits＋Xrayfork（汉化）",
       "mods": [
         "ModI18N",
         "Fem Goose Compilation",
         "Mysterious",
-        "NPC Sidebar Portraits"
-      ]
-    },
-    {
-      "name": "chs-goose-m-mysterious",
-      "title_en": "Masc Goose + Mysterious + NPC Portraits (CHS)",
-      "title_cn": "男性 Goose＋Mysterious＋NPC Portraits（汉化）",
-      "mods": [
-        "ModI18N",
-        "Masc Goose Compilation",
-        "Mysterious",
-        "NPC Sidebar Portraits"
+        "NPC Sidebar Portraits",
+        "Xrayfork"
       ]
     }
   ]
