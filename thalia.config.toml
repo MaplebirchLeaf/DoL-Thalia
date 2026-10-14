@@ -29,13 +29,13 @@ asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.0.2"
+release_tag = "v2.1.0"
 asset_keywords = ["deadwood-reblooms"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.2.1"
+release_tag = "v1.3.0"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
@@ -98,6 +98,6 @@ gradle = "8.13"
 [localization_data]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
-asset_name = "2026_10_13_23_00_09_3b4c92.zip"
-sha256 = "bbf28c9e9dfc0f02e2359b4df300f5b154765ed3440282ff5bcbf418a22aa7e5"
+asset_name = "2026_10_14_11_01_54_39c213.zip"
+sha256 = "e2af14e346baf00ef0aa0c1878f58a35edaedc854434eb29ffc244e1096ac0d3"
 game_version = "0.5.12.13"
