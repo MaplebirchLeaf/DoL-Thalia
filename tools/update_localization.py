@@ -15,7 +15,8 @@ import re
 import zipfile
 
 EXCLUDED = {"失效词条", "移除文件", "更新日志"}
-VARIABLE = re.compile(r"(?<![\w])(?:\$|_)[A-Za-z][\w]*(?:\.[A-Za-z][\w]*)*")
+IDENTIFIER = r"[$A-Z_a-z][$0-9A-Z_a-z]*"
+VARIABLE = re.compile(rf"(?<![$0-9A-Z_a-z])[$_]{IDENTIFIER}(?:\.{IDENTIFIER})*")
 CONTROL = re.compile(r"<<\s*(/?(?:if|elseif|else|set|run|goto|pass|for|switch|case|default|break|continue))\b")
 STRINGS = re.compile(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*' ''', re.VERBOSE)
 
@@ -87,7 +88,7 @@ def adapt_combat(document, original, patched):
             continue
         source = row['f']
         translated = row['t']
-        if not source or not safe(row, translated):
+        if not source:
             counts['combat_removed'] += 1
             continue
         old = before.get(name, '')

@@ -12,6 +12,39 @@ spec.loader.exec_module(module)
 
 
 class LocalizationTests(unittest.TestCase):
+    def test_combat_translation_preserves_existing_localized_variable_adaptations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            source = '<<set $_label to $worn.upper.name>>\nHello $NPCList[_n].name.\n<<oldReaction 0>>'
+            original.write_text(f'<tw-passagedata name="Combat">{escape(source)}</tw-passagedata>')
+            patched.write_text(f'<tw-passagedata name="Combat">{escape(source.replace("<<oldReaction 0>>", "<<newReaction _n>>"))}</tw-passagedata>')
+            translations = [
+                dict(f='<<set $_label to $worn.upper.name>>', t='<<set $_label to $worn.upper.cn_name_cap>>', pN='Combat', pos=0),
+                dict(f='Hello $NPCList[_n].name.', t='你看着$NPCList[_n].name。', pN='Combat', pos=source.index('Hello'))]
+            document = {'typeB': {'TypeBInputStoryScript': translations.copy()}}
+            module.adapt_combat(document, original, patched)
+            self.assertEqual(document['typeB']['TypeBInputStoryScript'], translations)
+
+    def test_translation_variables_use_sugarcube_ascii_identifier_boundaries(self):
+        row = dict(f='Hello $NPCList[_n].name.', t='旧译文')
+        self.assertTrue(module.safe(row, '你看着$NPCList[_n].name。'))
+        self.assertFalse(module.safe(row, '你好。'))
+        self.assertEqual(module.VARIABLE.findall('left_arm $NPCList[_n].name'), ['$NPCList', '_n'])
+        self.assertEqual(module.VARIABLE.findall('$_label _label $$value'), ['$_label', '_label', '$$value'])
+        self.assertFalse(module.safe(dict(f='$_label'), '_label'))
+
+    def test_combat_translation_rejects_rules_without_original_source_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'original.html'
+            patched = Path(directory) / 'patched.html'
+            original.write_text('<tw-passagedata name="Room">Original text</tw-passagedata>')
+            patched.write_text('<tw-passagedata name="Room">Original text\nNew text</tw-passagedata>')
+            document = {'typeB': {'TypeBInputStoryScript': [dict(f='New text', t='新文本', pN='Room', pos=0)]}}
+            report = module.adapt_combat(document, original, patched)
+            self.assertEqual(document['typeB']['TypeBInputStoryScript'], [])
+            self.assertEqual(report['combat_removed'], 1)
+
     def test_combat_translation_follows_moved_text_and_preserves_fixed_code(self):
         with tempfile.TemporaryDirectory() as directory:
             original = Path(directory) / 'original.html'
