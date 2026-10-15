@@ -29,7 +29,7 @@ asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.2.0"
+release_tag = "v2.2.1"
 asset_keywords = ["deadwood-reblooms"]
 asset_extensions = [".modpack"]
 
@@ -60,6 +60,7 @@ asset_extensions = [".zip"]
 [mod_sources."NPC Sidebar Portraits"]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
+# GitHub normalizes spaces in asset names; its display label uses spaces.
 asset_keywords = ["NPC.Sidebar.Portraits"]
 asset_extensions = [".zip"]
 
