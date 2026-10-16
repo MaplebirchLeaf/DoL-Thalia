@@ -23,13 +23,13 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.4.9"
+release_tag = "maplebirch-release-v5.4.10"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.2.5"
+release_tag = "v2.2.6"
 asset_keywords = ["deadwood-reblooms"]
 asset_extensions = [".modpack"]
 
