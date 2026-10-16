@@ -23,19 +23,19 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.4.6"
+release_tag = "maplebirch-release-v5.4.8"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.2.3"
+release_tag = "v2.2.4"
 asset_keywords = ["deadwood-reblooms"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.3.1"
+release_tag = "v1.3.2"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
