@@ -69,7 +69,7 @@ test('Deadwood main and audio sources select distinct packages and preserve each
   const contents = ['main package', 'audio package'];
   const assets = names.map((name, index) => ({
     id: index + 1,
-    name: `${name}-0.5.12.13-v2.4.0.modpack`,
+    name: `${name}-0.5.12.13-v2.4.1.modpack`,
     size: contents[index].length,
     digest: `sha256:${createHash('sha256').update(contents[index]).digest('hex')}`,
     url: `https://api.github.com/repos/MaplebirchLeaf/Deadwood-Reblooms/releases/assets/${index + 1}`,
@@ -87,10 +87,10 @@ test('Deadwood main and audio sources select distinct packages and preserve each
       const downloads: string[] = [];
       globalThis.fetch = (async (input: string | URL | Request) => {
         const url = String(input);
-        if (url === 'https://api.github.com/repos/MaplebirchLeaf/Deadwood-Reblooms/releases/tags/v2.4.0') {
+        if (url === 'https://api.github.com/repos/MaplebirchLeaf/Deadwood-Reblooms/releases/tags/v2.4.1') {
           requests++;
           if (requests === 4) expect(await readFile(join(output, assets[1].name), 'utf8')).toBe(contents[1]);
-          return Response.json({ tag_name: 'v2.4.0', assets });
+          return Response.json({ tag_name: 'v2.4.1', assets });
         }
         const index = assets.findIndex(asset => asset.url === url);
         expect(index).toBeGreaterThanOrEqual(0);
