@@ -23,19 +23,25 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.4.12"
+release_tag = "maplebirch-release-v5.4.15"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.2.7"
-asset_keywords = ["deadwood-reblooms"]
+release_tag = "v2.4.0"
+asset_keywords = ["deadwood-reblooms-0.5.12.13"]
+asset_extensions = [".modpack"]
+
+[mod_sources.deadwood-reblooms-audio]
+repository = "MaplebirchLeaf/Deadwood-Reblooms"
+release_tag = "v2.4.0"
+asset_keywords = ["deadwood-reblooms-audio-0.5.12.13"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.3.4"
+release_tag = "v1.3.6"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
@@ -99,6 +105,6 @@ gradle = "8.13"
 [localization_data]
 repository = "MaplebirchLeaf/DoL-Thalia-Assets"
 release_tag = "assets"
-asset_name = "2026_10_17_11_00_36_75a2ed.zip"
-sha256 = "65e1819ec28a525e93f8310d70c38577446e98972986d84f8a665c3b081fdb50"
+asset_name = "2026_10_18_12_00_11_55ff7d.zip"
+sha256 = "3b6a49d3bd1b845f0b925082825dcade96a13a9d2dd37a6342d1b6b8c15b67e8"
 game_version = "0.5.12.13"

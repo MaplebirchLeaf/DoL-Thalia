@@ -19,11 +19,20 @@ IDENTIFIER = r"[$A-Z_a-z][$0-9A-Z_a-z]*"
 VARIABLE = re.compile(rf"(?<![$0-9A-Z_a-z])[$_]{IDENTIFIER}(?:\.{IDENTIFIER})*")
 CONTROL = re.compile(r"<<\s*(/?(?:if|elseif|else|set|run|goto|pass|for|switch|case|default|break|continue))\b")
 STRINGS = re.compile(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*' ''', re.VERBOSE)
+COMBAT_DESCRIPTIONS = {
+    '<<set _text_output to "the " + $description>>',
+    '<<set _text_output to "the " + $description + " " + $role>>',
+    '<<set _text_output to "the " + $description + " man">>',
+    '<<set _text_output to "the " + $description + " woman">>',
+}
 
 
 def safe(row, translation):
     original = row["f"]
-    if Counter(VARIABLE.findall(original)) != Counter(VARIABLE.findall(translation)):
+    variables = translation
+    if row.get('fileName') == 'text.twee' and row.get('pN') == 'Widgets Text' and original in COMBAT_DESCRIPTIONS:
+        variables = variables.replace('($description_CN || $description)', '$description')
+    if Counter(VARIABLE.findall(original)) != Counter(VARIABLE.findall(variables)):
         return False
     if CONTROL.findall(original) != CONTROL.findall(translation):
         return False
@@ -135,6 +144,21 @@ def adapt_combat(document, original, patched):
     return counts
 
 
+def localize_combat_descriptions(document):
+    # 只修复原版人物称呼的显示规则，不改写 NPC 的英文标识或生成逻辑。
+    repaired = 0
+    for row in document['typeB'].get('TypeBInputStoryScript', []):
+        if row.get('fileName') != 'text.twee' or row.get('pN') != 'Widgets Text' or row['f'] not in COMBAT_DESCRIPTIONS:
+            continue
+        if '$description_CN' in row['t']:
+            continue
+        translated = re.sub(r'\$description\b', '($description_CN || $description)', row['t'])
+        if translated != row['t']:
+            row['t'] = translated
+            repaired += 1
+    return repaired
+
+
 def update(base, raw, output, combat_original=None, combat_html=None):
     candidates = defaultdict(set)
     counts = Counter()
@@ -173,6 +197,7 @@ def update(base, raw, output, combat_original=None, combat_html=None):
                     counts["updated"] += 1
                 else:
                     counts["rejected"] += 1
+        counts["combat_description_repaired"] = localize_combat_descriptions(document)
         if combat_html:
             if not combat_original:
                 raise ValueError('Missing original combat source')

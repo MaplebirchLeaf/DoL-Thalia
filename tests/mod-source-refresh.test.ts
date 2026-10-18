@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ThaliaConfig } from '../src/core/config';
+import { loadConfig, type ThaliaConfig, withGameVariant } from '../src/core/config';
 import { correctLocalization, requirePublishedLocalization, syncModSources } from '../src/sources/mod-sources';
 
 test('combat builds refuse an unpaired or unversioned localization archive', async () => {
@@ -56,6 +56,54 @@ test('private release assets refresh when same-name same-size content changes', 
     await syncModSources(config, ['pack']);
     expect(downloads).toBe(2);
     expect(await readFile(join(root, '0.5.12.13', 'pack.zip'), 'utf8')).toBe('new');
+  } finally {
+    globalThis.fetch = previousFetch;
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Deadwood main and audio sources select distinct packages and preserve each other on repeated synchronization', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'thalia-audio-source-'));
+  const previousFetch = globalThis.fetch;
+  const names = ['deadwood-reblooms', 'deadwood-reblooms-audio'];
+  const contents = ['main package', 'audio package'];
+  const assets = names.map((name, index) => ({
+    id: index + 1,
+    name: `${name}-0.5.12.13-v2.4.0.modpack`,
+    size: contents[index].length,
+    digest: `sha256:${createHash('sha256').update(contents[index]).digest('hex')}`,
+    url: `https://api.github.com/repos/MaplebirchLeaf/Deadwood-Reblooms/releases/assets/${index + 1}`,
+    browser_download_url: `https://example.com/${name}.modpack`
+  }));
+  try {
+    for (const variant of ['standard', 'dolp']) {
+      const config = withGameVariant(await loadConfig(), variant);
+      config.paths.builtin_mods = join(root, variant);
+      config.mod_sources = Object.fromEntries(names.map(name => [name, config.mod_sources![name]]));
+      const output = join(config.paths.builtin_mods, config.game.version);
+      await mkdir(output, { recursive: true });
+      for (const name of names) await writeFile(join(output, `${name}-0.5.12.13-v2.2.7.modpack`), 'old package');
+      let requests = 0;
+      const downloads: string[] = [];
+      globalThis.fetch = (async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url === 'https://api.github.com/repos/MaplebirchLeaf/Deadwood-Reblooms/releases/tags/v2.4.0') {
+          requests++;
+          if (requests === 4) expect(await readFile(join(output, assets[1].name), 'utf8')).toBe(contents[1]);
+          return Response.json({ tag_name: 'v2.4.0', assets });
+        }
+        const index = assets.findIndex(asset => asset.url === url);
+        expect(index).toBeGreaterThanOrEqual(0);
+        downloads.push(assets[index].name);
+        return new Response(contents[index]);
+      }) as typeof fetch;
+      await syncModSources(config, names);
+      await syncModSources(config, names);
+      expect(requests).toBe(4);
+      expect(downloads).toEqual(assets.map(asset => asset.name));
+      expect((await readdir(output)).filter(file => file.endsWith('.modpack')).sort()).toEqual(assets.map(asset => asset.name).sort());
+      for (const [index, asset] of assets.entries()) expect(await readFile(join(output, asset.name), 'utf8')).toBe(contents[index]);
+    }
   } finally {
     globalThis.fetch = previousFetch;
     await rm(root, { recursive: true, force: true });

@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { buildHtml } from '../src/builders/html';
 import { withStoryFormatConfig } from '../src/builders/story-format-config';
-import { loadConfig } from '../src/core/config';
+import { loadConfig, withGameVariant } from '../src/core/config';
 
 test('HTML source selection uses configured asset filenames first and legacy names only as fallback', async () => {
   const root = await mkdtemp(join(tmpdir(), 'thalia-html-mod-sources-'));
@@ -68,6 +68,19 @@ test('HTML source selection uses configured asset filenames first and legacy nam
     expect(await embedded(['Fem Goose Compilation', 'Mysterious'])).toEqual([
       { name: 'Fem Goose Compilation', file: 'Fem Goose Compilation.zip' },
       { name: 'Mysterious', file: 'Mysterious.zip' }
+    ]);
+
+    const mainFile = `deadwood-reblooms-${config.game.version}-v1.3.1.mod.zip`;
+    const audioFile = `deadwood-reblooms-audio-${config.game.version}-v1.3.1.mod.zip`;
+    config.game.version = withGameVariant(config, 'dolp').game.version;
+    const dolpDirectory = join(config.paths.builtin_mods, config.game.version);
+    await mkdir(dolpDirectory);
+    for (const filename of [mainFile, audioFile]) await copyFile(join(versionDir, filename), join(dolpDirectory, filename));
+    expect(await embedded(['deadwood-reblooms'])).toEqual([{ name: 'deadwood-reblooms', file: mainFile }]);
+    expect(await embedded(['deadwood-reblooms-audio'])).toEqual([{ name: 'deadwood-reblooms-audio', file: audioFile }]);
+    expect(await embedded(['deadwood-reblooms', 'deadwood-reblooms-audio'])).toEqual([
+      { name: 'deadwood-reblooms', file: mainFile },
+      { name: 'deadwood-reblooms-audio', file: audioFile }
     ]);
   } finally {
     await rm(root, { recursive: true, force: true });

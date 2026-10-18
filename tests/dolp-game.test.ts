@@ -34,12 +34,18 @@ test('DoLP presets exclude localization and AU while standard provides both lang
   expect(standard.map(preset => preset.name)).toEqual(['goose-f-mysterious', 'chs-goose-f-mysterious']);
   expect(standard.some(preset => preset.name === config.game.default_mod_list)).toBe(true);
   for (const preset of [...presets, ...standard]) {
-    expect(preset.mods).not.toContain('deadwood-reblooms-audio');
+    expect(preset.mods.slice(0, 4)).toEqual(['maplebirch', 'deadwood-reblooms', 'deadwood-reblooms-audio', 'revelation-the-book-of-return']);
+    expect(preset.mods.filter(mod => mod === 'deadwood-reblooms-audio')).toHaveLength(1);
     expect(preset.mods.slice(-4)).toEqual(['Fem Goose Compilation', 'Mysterious', 'NPC Sidebar Portraits', 'Xrayfork']);
     expect(preset.mods.filter(mod => mod.endsWith('Goose Compilation'))).toEqual(['Fem Goose Compilation']);
   }
   expect(config.mod_sources?.['Masc Goose Compilation']).toBeUndefined();
-  expect(config.mod_sources?.['deadwood-reblooms']?.asset_keywords).toEqual(['deadwood-reblooms']);
+  for (const name of ['deadwood-reblooms', 'deadwood-reblooms-audio']) {
+    expect(config.mod_sources?.[name]?.repository).toBe('MaplebirchLeaf/Deadwood-Reblooms');
+    expect(config.mod_sources?.[name]?.release_tag).toBe('v2.4.0');
+    expect(config.mod_sources?.[name]?.asset_keywords).toEqual([`${name}-0.5.12.13`]);
+    expect(config.mod_sources?.[name]?.asset_extensions).toEqual(['.modpack']);
+  }
   expect(config.mod_sources?.Xrayfork?.repository).toBe('MaplebirchLeaf/DoL-Thalia-Assets');
   expect(config.mod_sources?.Xrayfork?.asset_keywords).toEqual(['Xrayfork']);
   expect(dolp.game.release_repository).toBe('Frostberg/degrees-of-lewdity-plus');

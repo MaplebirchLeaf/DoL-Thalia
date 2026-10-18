@@ -12,6 +12,38 @@ spec.loader.exec_module(module)
 
 
 class LocalizationTests(unittest.TestCase):
+    def test_upstream_description_fallback_is_accepted_only_for_known_combat_labels(self):
+        row = dict(f='<<set _text_output to "the " + $description + " woman">>',
+                   t='<<set _text_output to "" + $description + "女人">>',
+                   fileName='text.twee', pN='Widgets Text')
+        translated = '<<set _text_output to ($description_CN || $description) + "女人">>'
+        self.assertTrue(module.safe(row, translated))
+        self.assertFalse(module.safe({**row, 'pN': 'Other'}, translated))
+        self.assertFalse(module.safe({**row, 'fileName': 'other.twee'}, translated))
+        self.assertFalse(module.safe(row, translated.replace('$description_CN', '$other')))
+        self.assertFalse(module.safe(row, translated + '<<set $other to 1>>'))
+
+    def test_combat_descriptions_prefer_localized_field_without_changing_source(self):
+        sources = [
+            '<<set _text_output to "the " + $description>>',
+            '<<set _text_output to "the " + $description + " " + $role>>',
+            '<<set _text_output to "the " + $description + " man">>',
+            '<<set _text_output to "the " + $description + " woman">>',
+        ]
+        rows = [dict(f=source, t=source, fileName='text.twee', pN='Widgets Text', pos=i)
+                for i, source in enumerate(sources)]
+        foreign = {**rows[0], 'pN': 'Foreign Widget'}
+        translated = {**rows[0], 't': '<<set _text_output to $description_CN || $description>>'}
+        document = {'typeB': {'TypeBInputStoryScript': rows + [foreign, translated]}}
+        self.assertEqual(module.localize_combat_descriptions(document), 4)
+        for index, row in enumerate(rows):
+            self.assertEqual(row['f'], sources[index])
+            self.assertEqual(row['pos'], index)
+            self.assertIn('($description_CN || $description)', row['t'])
+        self.assertEqual(foreign['t'], sources[0])
+        self.assertEqual(translated['t'], '<<set _text_output to $description_CN || $description>>')
+        self.assertEqual(module.localize_combat_descriptions(document), 0)
+
     def test_combat_translation_preserves_existing_localized_variable_adaptations(self):
         with tempfile.TemporaryDirectory() as directory:
             original = Path(directory) / 'original.html'

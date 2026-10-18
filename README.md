@@ -17,7 +17,7 @@ Use the [DoL-Thalia Hub](https://maplebirchleaf.github.io/DoL-Thalia/) to compar
 
 The release preset is Fem Goose + Mysterious + NPC Portraits + Xrayfork, loaded in that order. Standard DoL provides English and Chinese versions: 2 configurations, each with a ZIP and an APK. DoLP provides the English configuration when its game version is compatible with the bundled mods. Masc Goose is no longer supported.
 
-The bundle includes Deadwood Reblooms without its optional audio package.
+The bundle includes Deadwood Reblooms and its audio package.
 
 - **ZIP:** Extract the archive and open the included HTML file in a browser. A release ZIP is a complete game package; do not import it as a ModLoader mod.
 - **APK:** Install it on an Android device. Export your saves before updating or uninstalling the app.
