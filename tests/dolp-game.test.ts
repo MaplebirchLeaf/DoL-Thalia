@@ -42,7 +42,7 @@ test('DoLP presets exclude localization and AU while standard provides both lang
   expect(config.mod_sources?.['Masc Goose Compilation']).toBeUndefined();
   for (const name of ['deadwood-reblooms', 'deadwood-reblooms-audio']) {
     expect(config.mod_sources?.[name]?.repository).toBe('MaplebirchLeaf/Deadwood-Reblooms');
-    expect(config.mod_sources?.[name]?.release_tag).toBe('v2.4.1');
+    expect(config.mod_sources?.[name]?.release_tag).toBe('v2.4.3');
     expect(config.mod_sources?.[name]?.asset_keywords).toEqual([`${name}-0.5.12.13`]);
     expect(config.mod_sources?.[name]?.asset_extensions).toEqual(['.modpack']);
   }
