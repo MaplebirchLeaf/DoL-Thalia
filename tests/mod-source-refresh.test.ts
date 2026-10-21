@@ -80,6 +80,7 @@ test('Deadwood main and audio sources select distinct packages and preserve each
       const config = withGameVariant(await loadConfig(), variant);
       config.paths.builtin_mods = join(root, variant);
       config.mod_sources = Object.fromEntries(names.map(name => [name, config.mod_sources![name]]));
+      for (const source of Object.values(config.mod_sources)) source.release_tag = 'v2.4.3';
       const output = join(config.paths.builtin_mods, config.game.version);
       await mkdir(output, { recursive: true });
       for (const name of names) await writeFile(join(output, `${name}-0.5.12.13-v2.2.7.modpack`), 'old package');
