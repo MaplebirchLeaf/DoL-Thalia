@@ -23,25 +23,25 @@ asset_extensions = [".mod.zip"]
 
 [mod_sources.maplebirch-framework]
 repository = "MaplebirchLeaf/SCML-DOL-maplebirchFramework"
-release_tag = "maplebirch-release-v5.5.4"
+release_tag = "maplebirch-release-v5.5.5"
 asset_keywords = ["maplebirch"]
 asset_extensions = [".mod.zip", ".modpack"]
 
 [mod_sources.deadwood-reblooms]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.4.5"
+release_tag = "v2.4.6"
 asset_keywords = ["deadwood-reblooms-0.5.12.13"]
 asset_extensions = [".modpack"]
 
 [mod_sources.deadwood-reblooms-audio]
 repository = "MaplebirchLeaf/Deadwood-Reblooms"
-release_tag = "v2.4.5"
+release_tag = "v2.4.6"
 asset_keywords = ["deadwood-reblooms-audio-0.5.12.13"]
 asset_extensions = [".modpack"]
 
 [mod_sources.revelation-the-book-of-return]
 repository = "MaplebirchLeaf/Revelation-The-Book-of-Return"
-release_tag = "v1.3.11"
+release_tag = "v1.3.12"
 asset_keywords = ["revelation-the-book-of-return"]
 asset_extensions = [".modpack"]
 
