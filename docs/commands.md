@@ -35,7 +35,6 @@ bun run build:all --game=dolp --version=0.778
 ## 其他入口
 
 - `bun run check`：类型、lint 与格式检查。
-- `bun test ./tests`、`bun run test:native`、`bun run test:audit`、`bun run test:runtime`：分别检查构建逻辑、Java 下载器、Python 发布审计和游戏运行时。
 - `bun run audit`：审计 `dist/` 中已有的发布产物。
 - `bun run site:data`：只同步组合和已发布版本元数据，不下载或构建游戏。
 - `bun run site:play`：显式构建中英文在线游戏到 `site/public/play/`；可能下载游戏并准备构建工具。

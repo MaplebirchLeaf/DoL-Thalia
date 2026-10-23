@@ -25,7 +25,6 @@ export function releaseGameVersion(version: SiteVersion): string {
  * (buildReleaseAssetName): DoL-Thalia-<game>-<preset>[-<YYYY>].<ext>
  * The DoLP edition marker is stripped from the game version and is NOT
  * re-inserted: published assets carry only the game version token.
- * Keep aligned with tests/release-asset-name.test.ts.
  */
 export function releaseAssetUrl(version: SiteVersion, presetName: string, extension: 'apk' | 'zip'): string {
   return buildReleaseAssetUrl(REPOSITORY, version, presetName, extension);

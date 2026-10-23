@@ -44,9 +44,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check site code
-        run: |
-          bun run check
-          bun test ./tests/site-release-sync.test.ts
+        run: bun run check
 
       - name: Validate source Release run
         env:

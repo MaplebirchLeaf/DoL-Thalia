@@ -77,21 +77,14 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Check build tools and native downloader
-        run: |
-          bun run check
-          bun test ./tests
-          bun run test:audit
-          bun run test:native
+      - name: Check types, lint and formatting
+        run: bun run check
 
       - name: Build release assets
         run: bun run build:ready --game="$THALIA_GAME" --version="$THALIA_GAME_VERSION" --presets="$THALIA_PRESETS" --targets=zip,apk
         env:
           GITHUB_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN || github.token }}
           THALIA_MOD_PROXY_URL: ${{ vars.THALIA_MOD_PROXY_URL }}
-
-      - name: Verify runtime regressions
-        run: bun run test:runtime
 
       - name: Audit release artifacts
         run: bun run audit

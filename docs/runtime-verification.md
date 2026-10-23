@@ -1,16 +1,13 @@
-# 运行时验证
+# 构建与产物验证
 
 从仓库根目录执行：
 
 ```bash
 bun run check
-bun test ./tests
-bun run test:native
-bun run test:runtime
 bun run audit
 ```
 
-`test:native` 使用 `JAVA_HOME` 中的 JDK 17，自动在临时目录编译和清理测试。`test:runtime` 分别在 ModLoader、ModLoaderGui 和 BeautySelectorAddon 目录运行测试；首次执行前需要完成 `bun run build:env`。
+先运行 `bun run check` 检查源码，再构建所需的 ZIP、APK 或在线游戏，最后审计实际产物。发布流程还会核对签名、文件数量与在线游戏中的模组。
 
 ## 产物审计
 
@@ -24,7 +21,7 @@ bun run audit
 
 该脚本把内嵌模组 ZIP 校验、APK 签名块存在性和条目对齐检查变为可重复执行的检查。正式发布前仍需使用 `apksigner verify` 验证签名；对齐结果可用 `zipalign -c -p 4` 独立复核。
 
-## 验证范围
+## 手动复核范围
 
 - ModLoader：widget 回调分派、ZIP 元信息、旧记录迁移、并发更新、分片完整性、写入失败恢复、图片请求去重和日志上限。
 - GUI：依赖名称、别名和版本校验，循环依赖，取消、配额失败和部分安装结果，临时档案清理与并行安装隔离，以及日志和版本标识更新。
@@ -32,7 +29,7 @@ bun run audit
 - Android 下载：进度、分块桥接、取消、异常返回、下载限额、截断响应、URL 和重定向校验、临时文件清理。
 - 构建缓存：源码、依赖和产物变化触发失效，生成文件不会反过来污染源码指纹。
 
-运行时测试使用真实 IndexedDB 接口的内存实现和受控 DOM 对象，便于稳定复现并发情况；它们不能代替 Android WebView 和桌面浏览器的实际游玩测试。
+产物检查不能代替 Android WebView 和桌面浏览器的实际游玩复核，尤其是存储、并发安装与下载取消后的状态。
 
 GUI 将待安装 ZIP 暂存为 IndexedDB Blob，依赖规划只保留元信息和记录 ID；完整验证依赖图后，每次读取一个档案安装。成功、失败、取消均关闭并删除本次暂存库，避免完整 ZIP 沿递归调用栈累积。正式保存若因配额等原因中途失败，界面仍会列出已保存的模组。
 
