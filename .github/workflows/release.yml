@@ -47,6 +47,19 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.tag }}
 
+      - name: Ensure release tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --tags --force
+          if ! git rev-parse -q --verify "refs/tags/$THALIA_RELEASE_TAG" >/dev/null; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$THALIA_RELEASE_TAG" -f sha="$(git rev-parse HEAD)" >/dev/null
+            git fetch --tags --force
+          fi
+          test "$(git rev-parse "refs/tags/$THALIA_RELEASE_TAG^{commit}")" = "$(git rev-parse HEAD)" || { echo "Release tag does not match the source commit." >&2; exit 1; }
+
       - name: Check private resource access
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_MODS_TOKEN }}
@@ -102,12 +115,7 @@ jobs:
 
           # Checkout may peel annotated tags into a local commit ref.
           git fetch --tags --force
-          if git rev-parse -q --verify "refs/tags/$THALIA_RELEASE_TAG" >/dev/null; then
-            test "$(git rev-parse "refs/tags/$THALIA_RELEASE_TAG^{commit}")" = "$(git rev-parse HEAD)" || { echo "Release tag changed after validation." >&2; exit 1; }
-          else
-            git tag "$THALIA_RELEASE_TAG" HEAD
-            git push origin "$THALIA_RELEASE_TAG"
-          fi
+          test "$(git rev-parse "refs/tags/$THALIA_RELEASE_TAG^{commit}")" = "$(git rev-parse HEAD)" || { echo "Release tag changed after validation." >&2; exit 1; }
           gh release view "$THALIA_RELEASE_TAG" >/dev/null 2>&1 || \
             gh release create "$THALIA_RELEASE_TAG" --verify-tag --title "$THALIA_RELEASE_TAG" --draft --generate-notes
           gh release upload "$THALIA_RELEASE_TAG" "${assets[@]}" --clobber
